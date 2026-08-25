@@ -1,0 +1,338 @@
+html:has(.page-kesiapan) {
+  height: 100%;
+  overflow: hidden;
+}
+
+.page-kesiapan {
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+  background: #050607;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-kesiapan .topbar {
+  position: relative;
+  inset: auto;
+  flex: none;
+  z-index: 20;
+}
+
+.page-kesiapan .desktop-nav {
+  gap: clamp(10px, 1.6vw, 28px);
+}
+
+.page-kesiapan .brand-meta {
+  display: none;
+  margin-left: 2px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, .18);
+  color: #9aa2a4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.15px;
+  white-space: nowrap;
+}
+
+@media (min-width: 1280px) {
+  .page-kesiapan .brand-meta { display: inline-flex; align-items: center; }
+}
+
+.ks-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+.ks-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 6, 7, .55) 0%, transparent 14%),
+    linear-gradient(0deg, rgba(5, 6, 7, .42) 0%, transparent 16%),
+    linear-gradient(90deg, rgba(5, 6, 7, .2) 0%, transparent 28%, transparent 72%, rgba(5, 6, 7, .16) 100%);
+}
+
+.page-kesiapan .embers {
+  position: fixed;
+  z-index: 2;
+}
+
+.ks-main {
+  position: relative;
+  z-index: 4;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: clamp(8px, 1.1vh, 14px);
+  padding: clamp(8px, 1.15vh, 14px) var(--pad) clamp(10px, 1.6vh, 18px);
+}
+
+.ks-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  animation: rise .7s ease both;
+}
+
+.page-kesiapan .ks-hero .eyebrow {
+  margin: 0 0 3px;
+  color: var(--green-light);
+  font-size: clamp(10px, 1.15vh, 12px);
+  letter-spacing: 1.6px;
+}
+
+.page-kesiapan h1 {
+  white-space: nowrap;
+  max-width: none;
+  font-size: clamp(24px, 3.4vh, 36px);
+  letter-spacing: -1.1px;
+}
+
+.ks-lead {
+  margin: 4px 0 0;
+  color: #d8dbdc;
+  font-size: clamp(12px, 1.45vh, 15px);
+}
+
+.ks-pager {
+  color: #c9ccce;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .6px;
+}
+
+.ks-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(8px, 1vw, 12px);
+}
+
+.ks-stats article {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  column-gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: clamp(10px, 1.3vh, 14px) clamp(12px, 1.2vw, 16px);
+  border: 1px solid rgba(107, 180, 67, .5);
+  border-radius: 12px;
+  background: rgba(7, 12, 9, .62);
+  box-shadow: 0 0 20px rgba(107, 180, 67, .08);
+  backdrop-filter: blur(14px);
+}
+
+.ks-stats svg {
+  width: 26px;
+  height: 26px;
+  color: #ef5a36;
+}
+
+.ks-stats strong {
+  color: #ef5a36;
+  font-size: clamp(26px, 3.6vh, 38px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.ks-stats h2,
+.ks-stats p {
+  grid-column: 1 / -1;
+}
+
+.ks-stats h2 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(12px, 1.4vh, 14px);
+  font-weight: 800;
+}
+
+.ks-stats p {
+  margin: 3px 0 0;
+  color: #9aa2a4;
+  font-size: clamp(10.5px, 1.2vh, 12px);
+}
+
+.ks-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, .95fr);
+  gap: clamp(10px, 1.2vw, 16px);
+  min-height: 0;
+}
+
+.ks-side {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(8px, 1vh, 12px);
+  min-height: 0;
+}
+
+.ks-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(8px, 1.1vh, 12px) clamp(10px, 1.1vw, 14px) clamp(8px, 1vh, 12px);
+  border: 1px solid rgba(107, 180, 67, .48);
+  border-radius: 12px;
+  background: rgba(7, 12, 9, .62);
+  box-shadow: 0 0 18px rgba(107, 180, 67, .08);
+  backdrop-filter: blur(14px);
+}
+
+.ks-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 clamp(6px, .8vh, 10px);
+  color: #fff;
+  font-size: clamp(10.5px, 1.25vh, 12.5px);
+  font-weight: 800;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+}
+
+.ks-panel--table h2 {
+  color: var(--green-light);
+  letter-spacing: .5px;
+}
+
+.ks-panel h2 span {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(134, 209, 92, .55);
+  border-radius: 50%;
+}
+
+.ks-panel h2 svg {
+  width: 12px;
+  height: 12px;
+  color: #86d15c;
+}
+
+.ks-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ks-panel table {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+}
+
+.ks-panel th,
+.ks-panel td {
+  padding: clamp(5px, .85vh, 9px) 10px;
+  border: 1px solid rgba(134, 209, 92, .16);
+  font-size: clamp(11px, 1.3vh, 13px);
+}
+
+.ks-panel--table th {
+  color: #c6e89a;
+  font-weight: 700;
+  text-align: center;
+  background: rgba(107, 180, 67, .08);
+}
+
+.ks-panel--table th:first-child,
+.ks-panel--table td:first-child,
+.ks-panel--table tfoot th:first-child {
+  text-align: left;
+}
+
+.ks-panel--table td {
+  color: #f4f6f6;
+  text-align: center;
+}
+
+.ks-panel--table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, .03);
+}
+
+.ks-panel--table tfoot th {
+  background: #ef5a36;
+  color: #fff;
+  font-weight: 800;
+  text-align: center;
+  border-color: rgba(255, 255, 255, .12);
+}
+
+.ks-mini td {
+  color: #e8eceb;
+  font-size: clamp(11px, 1.25vh, 12.5px);
+}
+
+.ks-mini td:last-child {
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+  width: 28%;
+}
+
+.ks-mini--3 td:nth-child(2),
+.ks-mini--3 td:nth-child(3) {
+  text-align: center;
+  width: auto;
+}
+
+.ks-mini--3 td:last-child {
+  width: 14%;
+  text-align: center;
+}
+
+.ks-mini .is-total td {
+  background: #ef5a36;
+  color: #fff;
+  font-weight: 800;
+  border-color: rgba(255, 255, 255, .12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-hero { animation: none; }
+}
+
+@media (max-height: 760px) {
+  .ks-lead { display: none; }
+  .ks-stats p { display: none; }
+}
+
+@media (max-width: 1100px) {
+  .ks-body { grid-template-columns: 1fr 1fr; }
+  .ks-stats { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  html:has(.page-kesiapan) { overflow: auto; height: auto; }
+
+  .page-kesiapan {
+    height: auto;
+    max-height: none;
+    overflow: auto;
+  }
+
+  .page-kesiapan h1 {
+    white-space: normal;
+    font-size: 28px;
+  }
+
+  .ks-main { grid-template-rows: auto auto auto; }
+  .ks-stats,
+  .ks-body,
+  .ks-side { grid-template-columns: 1fr; grid-template-rows: none; }
+}

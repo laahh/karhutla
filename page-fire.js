@@ -52,6 +52,11 @@
       });
       return;
     }
+    if (isSameDocument(href)) return;
+    if (window.location.protocol === "file:") {
+      window.location.assign(href);
+      return;
+    }
     window.location.href = href;
   }
 
@@ -241,10 +246,32 @@
     return true;
   }
 
+  function isSameDocument(href) {
+    if (!href || href.charAt(0) === "#") return true;
+    try {
+      const next = new URL(href, window.location.href);
+      const here = new URL(window.location.href);
+      const nextPath = decodeURIComponent(next.pathname.replace(/\\/g, "/")).toLowerCase();
+      const herePath = decodeURIComponent(here.pathname.replace(/\\/g, "/")).toLowerCase();
+      if (nextPath === herePath) return true;
+      const nextFile = nextPath.split("/").pop();
+      const hereFile = herePath.split("/").pop();
+      return !!nextFile && nextFile === hereFile;
+    } catch (e) {
+      return false;
+    }
+  }
+
   document.addEventListener("click", function (e) {
     const a = e.target.closest("a[href]");
     if (!a || !isInternal(a)) return;
     const href = a.getAttribute("href");
+    if (isSameDocument(href)) {
+      e.preventDefault();
+      if (href.charAt(0) === "#") goTo(href);
+      return;
+    }
+    if (window.location.protocol === "file:") return;
     const current = window.location.hash || "#beranda";
     if (href === current && href === "#beranda" && window.scrollY < 80) return;
     e.preventDefault();

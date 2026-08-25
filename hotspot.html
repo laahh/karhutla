@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Peta hotspot KARHUTLA Berau dari data realtime SiPongi Kemenhut.">
+  <meta name="description" content="Peta hotspot dan penanganan KARHUTLA Kabupaten Berau per tanggal.">
   <title>Peta Hotspot • KARHUTLA Command Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,89 +19,78 @@
     <div id="map-loading" class="map-loading">Memuat data SiPongi…</div>
 
     <header class="topbar">
-      <a class="brand" href="index.html" aria-label="Berau Coal HSE Beranda">
-        <span>BERAU COAL</span><i>·</i><strong>OHS</strong>
-      </a>
-      <nav class="desktop-nav" aria-label="Navigasi utama">
-        <a href="index.html">Beranda</a>
-        <a class="active" href="hotspot.html">Hotspot</a>
-        <a href="milestone.html">Milestone</a>
-        <a href="tahap.html">Tahap</a>
-        <a href="index.html#prosedur">Prosedur</a>
-        <a href="index.html#laporan">Laporan</a>
+    <a class="brand" href="index.html" aria-label="Berau Coal HSE Beranda">
+      <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
+    </a>
+    <nav class="desktop-nav" aria-label="Navigasi utama">
+      <a href="index.html">Beranda</a>
+      <a href="milestone.html">Milestone</a>
+      <a href="tahap.html">Tahap Pengendalian</a>
+      <a href="fokus.html">Fokus Area</a>
+      <a href="aktivitas.html">Aktivitas</a>
+      <a href="kesiapan.html">Kesiapan Tim</a>
+      <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
       </nav>
-      <a class="report-button" href="index.html#laporan">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-2.7 7-6.4 0-2.7-1.5-5.2-4.4-7.6.1 2-1 3.1-2.1 3.8.3-3.4-1.4-6.4-4.5-8.8.2 3.1-1.8 5.3-3 7.4C3.8 12.3 5 15.2 5 16c0 3.3 3.1 6 7 6Z"/></svg>
-        Laporkan Titik Api
-      </a>
       <details class="mobile-menu">
         <summary aria-label="Buka menu">
           <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </summary>
         <nav>
           <a href="index.html">Beranda</a>
-          <a href="hotspot.html">Hotspot</a>
           <a href="milestone.html">Milestone</a>
-          <a href="tahap.html">Tahap</a>
-          <a href="index.html#prosedur">Prosedur</a>
-          <a href="index.html#laporan">Laporan</a>
+          <a href="tahap.html">Tahap Pengendalian</a>
+          <a href="fokus.html">Fokus Area</a>
+          <a href="aktivitas.html">Aktivitas</a>
+          <a href="kesiapan.html">Kesiapan Tim</a>
+          <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
         </nav>
       </details>
     </header>
 
-    <aside class="glass-panel list-card" aria-label="Daftar hotspot">
+    <aside class="glass-panel list-card" aria-label="Agenda KARHUTLA harian">
       <div class="chip-row">
         <span class="alert-chip">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 21.5 20H2.5L12 3.2Z"/><path d="M12 10v4.2"/><path d="M12 17.2v.6"/></svg>
           SIAGA KARHUTLA
         </span>
-        <span class="ghost-chip">SIPONGI KEMENHUT</span>
+        <span class="ghost-chip">KAB. BERAU</span>
       </div>
-      <p class="eyebrow">Command center · Berau</p>
-      <h1>Hotspot realtime.</h1>
-      <p class="lead" id="data-source">Sumber data: SIPONGI KEMENHUT. Kabupaten Berau, Kalimantan Timur.</p>
+      <p class="eyebrow">Command center · per tanggal</p>
+      <h1>Hotspot &amp; respon.</h1>
+      <p class="lead" id="data-source">SiPongi Kemenhut + penanganan terverifikasi. Cakupan Kabupaten Berau.</p>
 
-      <div class="list-tabs" role="tablist">
-        <button type="button" class="is-on" data-list="satelit">Satelit</button>
-        <button type="button" data-list="kasus">Kejadian</button>
-      </div>
-      <div id="sat-grid" class="sat-grid" aria-label="Info titik per satelit"></div>
+      <div class="date-strip" id="date-strip" role="tablist" aria-label="Pilih tanggal"></div>
 
-      <div class="filters">
-        <label>
-          Periode
-          <select id="filter-period">
-            <option value="12">12 jam</option>
-            <option value="24" selected>24 jam</option>
-            <option value="48">48 jam</option>
-            <option value="custom">Pilih tanggal</option>
-          </select>
-        </label>
-        <label>
-          Wilayah
-          <select id="filter-area">
-            <option value="berau" selected>Berau</option>
-            <option value="kaltim">Kalimantan Timur</option>
-          </select>
-        </label>
-        <label class="span-2" id="date-wrap" hidden>
-          Tanggal
-          <input id="filter-date" type="date">
-        </label>
-        <label>
-          Kecamatan
-          <select id="filter-site"></select>
-        </label>
-        <label>
-          Confidence
-          <select id="filter-status"></select>
-        </label>
+      <div class="day-summary" aria-label="Ringkasan hari ini">
+        <article>
+          <small>SiPongi</small>
+          <strong id="sum-sipongi">0</strong>
+        </article>
+        <article>
+          <small>Internal</small>
+          <strong id="sum-internal">0</strong>
+        </article>
+        <article>
+          <small>Eksternal</small>
+          <strong id="sum-eksternal">0</strong>
+        </article>
       </div>
+
+      <div class="scope-tabs" role="group" aria-label="Filter penanganan">
+        <button type="button" class="is-on" data-scope="semua">Semua</button>
+        <button type="button" data-scope="internal">Internal</button>
+        <button type="button" data-scope="eksternal">Eksternal</button>
+      </div>
+
+      <label class="route-toggle">
+        <input type="checkbox" id="show-all-routes">
+        Tampilkan semua jalur respon hari ini
+      </label>
 
       <div class="list-meta">
         <strong id="list-count">0</strong>
-        <span>titik ditampilkan</span>
-        <button type="button" id="btn-refresh" class="refresh-btn">Muat ulang</button>
+        <span>titik di tanggal ini</span>
+        <button type="button" id="btn-refresh" class="refresh-btn">Muat SiPongi</button>
       </div>
       <div class="hotspot-list" id="hotspot-list"></div>
     </aside>
@@ -111,9 +100,9 @@
         <div class="layer-switch" role="group" aria-label="Layer peta">
           <button type="button" data-layer="sat" class="is-on">Satelit</button>
           <button type="button" data-layer="dark">Gelap</button>
-          <button type="button" data-layer="ops">Operasi</button>
-          <button type="button" data-layer="kasus" class="is-on">Kejadian</button>
-          <button type="button" data-layer="fdrs">FDRS</button>
+          <button type="button" data-layer="ops" class="is-on">Konsesi</button>
+          <button type="button" data-layer="sipongi" class="is-on">SiPongi</button>
+          <button type="button" data-layer="kasus" class="is-on">Terverifikasi</button>
         </div>
         <div class="zoom-switch" role="group" aria-label="Zoom peta">
           <button type="button" id="zoom-in" aria-label="Perbesar">+</button>
@@ -126,26 +115,29 @@
         <div class="detail-empty" id="detail-empty">
           <span class="pulse"></span>
           <div>
-            <small>STATUS TERKINI</small>
-            <p id="live-status">Mengambil hotspot SiPongi…</p>
+            <small>STATUS HARI INI</small>
+            <p id="live-status">Menyiapkan agenda Berau…</p>
           </div>
-          <div class="radar" aria-hidden="true"><span></span></div>
         </div>
         <article class="detail-card" id="detail-card" hidden></article>
       </aside>
     </div>
 
     <div class="metric-panel map-legend-bar">
-      <article><i class="dot tinggi"></i><div><small>High</small><p>Confidence tinggi</p></div></article>
-      <article><i class="dot sedang"></i><div><small>Medium</small><p>Perlu verifikasi</p></div></article>
-      <article><i class="dot rendah"></i><div><small>Low</small><p>Indikasi rendah</p></div></article>
-      <article><i class="dot kasus"></i><div><small>Kejadian</small><p>Kasus lapangan</p></div></article>
+      <article><i class="dot tinggi"></i><div><small>High</small><p>SiPongi tinggi</p></div></article>
+      <article><i class="dot sedang"></i><div><small>Medium</small><p>SiPongi sedang</p></div></article>
+      <article><i class="dot rendah"></i><div><small>Low</small><p>SiPongi rendah</p></div></article>
+      <article><i class="dot internal"></i><div><small>Internal</small><p>Dalam konsesi</p></div></article>
+      <article><i class="dot kasus"></i><div><small>Eksternal</small><p>Luar konsesi</p></div></article>
+      <article><i class="dot route"></i><div><small>Jalur</small><p>Base → titik api</p></div></article>
     </div>
   </section>
 
   <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="iupk-boundary.js"></script>
   <script src="kasus-data.js"></script>
+  <script src="laporan-data.js"></script>
   <script src="hotspot-map.js"></script>
   <script src="page-fire.js"></script>
 </body>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Fokus area prioritas KARHUTLA PT Berau Coal berdasarkan baseline area rawan dan riwayat kejadian.">
+  <title>Fokus Area • KARHUTLA Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="fokus.css">
+</head>
+<body class="page-fokus">
+  <img class="fa-bg" src="tahap.png" alt="" width="1024" height="576">
+  <div class="fa-vignette" aria-hidden="true"></div>
+  <canvas class="embers" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="#beranda" aria-label="Berau Coal HSE Beranda">
+      <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
+    </a>
+    <nav class="desktop-nav" aria-label="Navigasi utama">
+    <a class="active" href="#beranda">Beranda</a>
+      <a href="milestone.html">Milestone</a>
+      <a href="tahap.html">Tahap Pengendalian</a>
+      <a href="fokus.html">Fokus Area</a>
+      <a href="aktivitas.html">Aktivitas</a>
+      <a href="kesiapan.html">Kesiapan Tim</a>
+      <a href="hotspot.html">Hotspot</a>
+      <!-- <a href="#prosedur">Prosedur</a>
+      <a href="#laporan">Laporan</a> -->
+    </nav>
+    <!-- <a class="report-button" href="#laporan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-2.7 7-6.4 0-2.7-1.5-5.2-4.4-7.6.1 2-1 3.1-2.1 3.8.3-3.4-1.4-6.4-4.5-8.8.2 3.1-1.8 5.3-3 7.4C3.8 12.3 5 15.2 5 16c0 3.3 3.1 6 7 6Z"/></svg>
+      Laporkan Titik Api
+    </a> -->
+    <details class="mobile-menu">
+      <summary aria-label="Buka menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </summary>
+      <nav>
+        <a class="active" href="#beranda">Beranda</a>
+        <a href="milestone.html">Milestone</a>
+        <a href="tahap.html">Tahap Pengendalian</a>
+        <a href="fokus.html">Fokus Area</a>
+        <a href="aktivitas.html">Aktivitas</a>
+        <a href="kesiapan.html">Kesiapan Tim</a>
+        <a href="hotspot.html">Hotspot</a>
+        <!-- <a href="#prosedur">Prosedur</a>
+        <a href="#laporan">Laporan</a> -->
+      </nav>
+    </details>
+  </header>
+
+
+  <main class="fa-main">
+    <aside class="fa-side">
+      <h2>
+        <span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+        </span>
+        Fokus Area
+      </h2>
+      <p>Baseline prioritas penanganan Karhutla untuk pengendalian area rawan dan titik riwayat kejadian.</p>
+      <div class="fa-stat">
+        <strong>8</strong>
+        <span><b>area prioritas</b> telah dipetakan sebagai fokus baseline penanganan awal.</span>
+      </div>
+      <div class="fa-base">
+        <small>Common baseline</small>
+        <p>Jalan Hauling • IPPKH • WMP • Gudang Handak • Riwayat Karhutla</p>
+      </div>
+    </aside>
+
+    <div class="fa-content">
+      <div class="fa-hero">
+        <div>
+          <p class="eyebrow">PENANGANAN KARHUTLA PT BERAU COAL</p>
+          <h1>Fokus Area Prioritas Karhutla</h1>
+          <p class="fa-lead">Fokus penanganan Karhutla telah dimulai dari baseline area rawan dan titik riwayat kejadian.</p>
+        </div>
+        <span class="fa-pager">1 / 3</span>
+      </div>
+
+      <div class="fa-filters" role="tablist" aria-label="Filter baseline area">
+        <button type="button" class="is-active" data-filter="all">Baseline pengendalian utama</button>
+        <button type="button" data-filter="hauling" data-tone="green">Jalan Hauling</button>
+        <button type="button" data-filter="ippkh" data-tone="lime">Area IPPKH</button>
+        <button type="button" data-filter="wmp" data-tone="teal">WMP</button>
+        <button type="button" data-filter="handak" data-tone="orange">Gudang Handak</button>
+        <button type="button" data-filter="riwayat" data-tone="red">Riwayat Kejadian</button>
+      </div>
+
+      <section class="fa-grid" id="fa-grid" aria-label="Daftar area prioritas"></section>
+    </div>
+  </main>
+
+  <div class="fa-note">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6.5v6.2c0 5.1-3.4 8.8-8 10.5-4.6-1.7-8-5.4-8-10.5V6.5L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
+    <p>Fokus sudah mencakup 8 area; penguatan berikutnya adalah konsistensi patroli pada area rawan dan kesiapan pemadaman Karhutla.</p>
+  </div>
+
+  <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
+  <script src="fokus.js"></script>
+  <script src="embers.js"></script>
+  <script src="page-fire.js"></script>
+</body>
+</html>

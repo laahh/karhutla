@@ -14,27 +14,14 @@
     sedang: { label: "Medium", badge: "Medium" },
     rendah: { label: "Low", badge: "Low" }
   };
-  const CONFS = [
-    { id: "semua", label: "Semua confidence" },
-    { id: "high", label: "High" },
-    { id: "medium", label: "Medium" },
-    { id: "low", label: "Low" }
-  ];
-
-  const boundsOps = L.latLngBounds([1.78, 117.05], [2.32, 117.72]);
-  const opsPolygon = [
-    [2.30, 117.28], [2.28, 117.64], [2.16, 117.70], [1.92, 117.62], [1.84, 117.22], [1.98, 117.12], [2.18, 117.18]
-  ];
+  const DEMO_PHOTOS = ["aktivitas/act-1.jpg", "aktivitas/act-2.jpg", "aktivitas/act-3.jpg", "aktivitas/act-4.jpg"];
+  const MATCH_KM = 3;
+  const NEAR_KM = 5;
+  const boundsOps = L.latLngBounds([1.87, 117.13], [2.40, 117.63]);
 
   const listEl = document.getElementById("hotspot-list");
   const countEl = document.getElementById("list-count");
-  const satGrid = document.getElementById("sat-grid");
-  const siteEl = document.getElementById("filter-site");
-  const statusEl = document.getElementById("filter-status");
-  const dateEl = document.getElementById("filter-date");
-  const periodEl = document.getElementById("filter-period");
-  const areaEl = document.getElementById("filter-area");
-  const dateWrap = document.getElementById("date-wrap");
+  const dateStrip = document.getElementById("date-strip");
   const emptyEl = document.getElementById("detail-empty");
   const cardEl = document.getElementById("detail-card");
   const detailPane = document.getElementById("map-detail");
@@ -42,23 +29,24 @@
   const sourceEl = document.getElementById("data-source");
   const liveStatus = document.getElementById("live-status");
   const refreshBtn = document.getElementById("btn-refresh");
+  const sumSipongi = document.getElementById("sum-sipongi");
+  const sumInternal = document.getElementById("sum-internal");
+  const sumEksternal = document.getElementById("sum-eksternal");
+  const showAllRoutesEl = document.getElementById("show-all-routes");
 
   let HOTSPOTS = [];
   let CASES = [];
+  let DATE_KEYS = [];
   let selectedId = null;
-  let listMode = "satelit";
+  let selectedDay = "today";
+  let scope = "semua";
   let showKasus = true;
+  let showSipongi = true;
   const markers = {};
   const caseMarkers = {};
+  let routeLayer = L.layerGroup();
   let lastFetchAt = null;
   let loading = false;
-
-  CONFS.forEach(function (row) {
-    const opt = document.createElement("option");
-    opt.value = row.id;
-    opt.textContent = row.label;
-    statusEl.appendChild(opt);
-  });
 
   const sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
     attribution: "Esri • Data SIPONGI KEMENHUT",
@@ -75,19 +63,27 @@
     zoomControl: false,
     attributionControl: false
   });
-  const opsLayer = L.polygon(opsPolygon, {
-    color: "#86d15c",
-    weight: 1.6,
-    dashArray: "6 5",
-    fillColor: "#6bb443",
-    fillOpacity: 0.06
+  map.createPane("iupk");
+  map.getPane("iupk").style.zIndex = 450;
+  map.getPane("iupk").style.pointerEvents = "auto";
+  const iupkRenderer = L.canvas({ pane: "iupk", padding: 0.8 });
+  const opsLayer = L.geoJSON(window.IUPK_BOUNDARY || { type: "FeatureCollection", features: [] }, {
+    pane: "iupk",
+    renderer: iupkRenderer,
+    style: {
+      color: "#d4ff7a",
+      weight: 4,
+      fillColor: "#6bb443",
+      fillOpacity: 0.22
+    },
+    onEachFeature: function (feature, layer) {
+      const p = feature.properties || {};
+      const luas = p.Luas != null ? Number(p.Luas).toLocaleString("id-ID", { maximumFractionDigits: 0 }) + " ha" : "";
+      const title = [p.Site, p.Layer].filter(Boolean).join(" · ");
+      layer.bindTooltip((title || "Konsesi IUPK") + (luas ? " · " + luas : ""), { sticky: true, className: "iupk-tip" });
+    }
   });
-  const fdrsLayer = L.layerGroup([
-    L.polygon([[2.22, 117.12], [2.30, 117.28], [2.18, 117.18]], { color: "#2ea043", weight: 1, fillColor: "#2ea043", fillOpacity: 0.22 }),
-    L.polygon([[2.28, 117.28], [2.30, 117.48], [2.12, 117.40], [2.10, 117.22]], { color: "#e6d325", weight: 1, fillColor: "#e6d325", fillOpacity: 0.22 }),
-    L.polygon([[2.16, 117.40], [2.28, 117.64], [2.16, 117.70], [2.02, 117.52]], { color: "#e8891c", weight: 1, fillColor: "#e8891c", fillOpacity: 0.22 }),
-    L.polygon([[2.02, 117.22], [1.92, 117.62], [1.84, 117.22], [1.98, 117.12]], { color: "#d73a32", weight: 1, fillColor: "#d73a32", fillOpacity: 0.22 })
-  ]);
+  routeLayer.addTo(map);
 
   function esc(s) {
     return String(s == null || s === "" ? "—" : s)
@@ -97,37 +93,157 @@
       .replace(/"/g, "&quot;");
   }
 
+  function todayKey() {
+    const n = new Date();
+    const m = String(n.getMonth() + 1).padStart(2, "0");
+    const d = String(n.getDate()).padStart(2, "0");
+    return n.getFullYear() + "-" + m + "-" + d;
+  }
+
+  function dayKey(iso) {
+    if (!iso) return "";
+    const raw = String(iso);
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+    const d = new Date(raw.length <= 10 ? raw + "T00:00:00" : raw);
+    if (Number.isNaN(d.getTime())) return "";
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + dd;
+  }
+
   function formatDate(iso) {
-    if (!iso) return "—";
-    const d = new Date(iso + "T00:00:00");
+    const key = dayKey(iso);
+    if (!key) return "—";
+    const d = new Date(key + "T00:00:00");
     if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
   }
 
-  function parseNotif(text) {
-    const parts = String(text || "").split("_").map(function (s) { return s.trim(); }).filter(Boolean);
-    return {
-      raw: text || "—",
-      jenis: parts[0] || "Karhutla",
-      perusahaan: parts[1] || "",
-      lokasi: parts[2] || "",
-      siteTeks: parts[3] || "",
-      tanggalTeks: parts[4] || "",
-      jamKejadian: parts[5] || "",
-      jamLapor: parts[6] || "",
-      uraian: parts[7] || "",
-      korban: parts[8] || "",
-      tindakan: parts[9] || ""
-    };
+  function chipLabel(key) {
+    if (key === "today") return "Hari ini";
+    const d = new Date(key + "T00:00:00");
+    if (Number.isNaN(d.getTime())) return key;
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
   }
 
-  function kasusIcon(on) {
-    return L.divIcon({
-      className: "",
-      html: '<span class="pin kasus' + (on ? " is-on" : "") + '"><i class="pin-ring"></i><i class="pin-core"></i></span>',
-      iconSize: [26, 26],
-      iconAnchor: [13, 13]
+  function activeDayKey() {
+    return selectedDay === "today" ? todayKey() : selectedDay;
+  }
+
+  function toNum(s) {
+    return parseFloat(String(s).replace(",", "."));
+  }
+
+  function dmsToDec(d, m, s, hemi) {
+    let v = Math.abs(toNum(d)) + toNum(m || 0) / 60 + toNum(s || 0) / 3600;
+    const h = String(hemi || "").toUpperCase();
+    if (h === "S" || h === "W") v = -v;
+    if (toNum(d) < 0) v = -Math.abs(v);
+    return v;
+  }
+
+  function parseCoord(text) {
+    if (text == null) return { lat: NaN, lng: NaN };
+    let t = String(text)
+      .replace(/⁰/g, "°")
+      .replace(/[′’]/g, "'")
+      .replace(/[″“”]/g, '"')
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!t || t === "-") return { lat: NaN, lng: NaN };
+
+    let m = t.match(/lat[:\s]*([-\d.]+)\s*°?\s*[NS]?.*?long[:\s]*([-\d.]+)\s*°?\s*[EW]?/i);
+    if (m) return { lat: toNum(m[1]), lng: toNum(m[2]) };
+
+    m = t.match(/N\s+(\d+)°\s*(\d+(?:\.\d+)?)\s+E\s+(\d+)°\s*(\d+(?:\.\d+)?)/i);
+    if (m) return { lat: dmsToDec(m[1], m[2], 0, "N"), lng: dmsToDec(m[3], m[4], 0, "E") };
+
+    m = t.match(/(\d+)[°']\s*(\d+)['']\s*(\d+(?:\.\d+)?)["']?\s*([NS])\s+(\d+)[°']\s*(\d+)['']\s*(\d+(?:\.\d+)?)["']?\s*([EW])/i);
+    if (m) return { lat: dmsToDec(m[1], m[2], m[3], m[4]), lng: dmsToDec(m[5], m[6], m[7], m[8]) };
+
+    m = t.match(/([-\d.]+)\s*[°"']?\s*([NS])\s*,?\s*([-\d.]+)\s*[°"']?\s*([EW])/i);
+    if (m) return { lat: dmsToDec(m[1], 0, 0, m[2]), lng: dmsToDec(m[3], 0, 0, m[4]) };
+
+    m = t.match(/([1-3]\.\d+)\s*["']?\s*N\s+([1][01]\d\.\d+)\s*["']?\s*E/i);
+    if (m) return { lat: toNum(m[1]), lng: toNum(m[2]) };
+
+    m = t.match(/([1-3]\.\d+)\s*[,;]?\s+(117\.\d+)/);
+    if (m) return { lat: toNum(m[1]), lng: toNum(m[2]) };
+
+    return { lat: NaN, lng: NaN };
+  }
+
+  function firstCoord(text) {
+    if (text == null) return { lat: NaN, lng: NaN };
+    const chunks = String(text).split(/[\n;/]+/);
+    for (let i = 0; i < chunks.length; i += 1) {
+      const xy = parseCoord(chunks[i]);
+      if (Number.isFinite(xy.lat) && Number.isFinite(xy.lng)) return xy;
+    }
+    return parseCoord(text);
+  }
+
+  function splitLokasi(raw) {
+    const text = String(raw || "").trim();
+    if (!text) return { lokasi: "Operasi Karhutla", site: "—" };
+    const parts = text.split("_").map(function (s) { return s.trim(); }).filter(Boolean);
+    if (parts.length >= 2) {
+      return { lokasi: parts.slice(0, -1).join(" "), site: parts[parts.length - 1] };
+    }
+    return { lokasi: text, site: "—" };
+  }
+
+  function hasCoord(item) {
+    return item && Number.isFinite(item.lat) && Number.isFinite(item.lng);
+  }
+
+  function dash(v) {
+    if (v == null) return "—";
+    const s = String(v).replace(/\s+/g, " ").trim();
+    return s || "—";
+  }
+
+  function haversineKm(aLat, aLng, bLat, bLng) {
+    const R = 6371;
+    const dLat = (bLat - aLat) * Math.PI / 180;
+    const dLng = (bLng - aLng) * Math.PI / 180;
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * Math.PI / 180) * Math.cos(bLat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  }
+
+  function pointInRing(lat, lng, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0];
+      const yi = ring[i][1];
+      const xj = ring[j][0];
+      const yj = ring[j][1];
+      const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  function insideIupk(lat, lng) {
+    const fc = window.IUPK_BOUNDARY;
+    if (!fc || !Array.isArray(fc.features)) return false;
+    return fc.features.some(function (feat) {
+      const g = feat.geometry;
+      if (!g) return false;
+      const polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+      return polys.some(function (poly) { return poly[0] && pointInRing(lat, lng, poly[0]); });
     });
+  }
+
+  function isEksternal(rec, lat, lng) {
+    const ket = String(rec.keterangan || "").toLowerCase();
+    const site = String(rec.site || "").toLowerCase();
+    const note = String(rec.notifikasi || "").toLowerCase();
+    if (ket.indexOf("eksternal") !== -1) return true;
+    if (site.indexOf("jalan negara") !== -1) return true;
+    if (/kampung|jalan poros|jalan baru/.test(site + " " + note) && !/bmo|lmo|gmo|smo|blok|punan/.test(site)) return true;
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return !insideIupk(lat, lng);
+    return false;
   }
 
   function satOf(sumber) {
@@ -141,12 +257,36 @@
     return "rendah";
   }
 
+  function satLabel(id) {
+    const found = SATS.find(function (s) { return s.id === id; });
+    return found ? found.label : id;
+  }
+
+  function kasusIcon(item, on) {
+    const kind = item.eksternal ? "kasus" : "internal";
+    return L.divIcon({
+      className: "",
+      html: '<span class="pin ' + kind + (on ? " is-on" : "") + '"><i class="pin-ring"></i><i class="pin-core"></i></span>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+  }
+
   function markerIcon(level, on) {
     return L.divIcon({
       className: "",
       html: '<span class="pin ' + level + (on ? " is-on" : "") + '"><i class="pin-ring"></i><i class="pin-core"></i></span>',
       iconSize: [22, 22],
       iconAnchor: [11, 11]
+    });
+  }
+
+  function baseIcon() {
+    return L.divIcon({
+      className: "",
+      html: '<span class="pin base"><i class="pin-ring"></i><i class="pin-core"></i></span>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
     });
   }
 
@@ -161,19 +301,26 @@
     };
   }
 
-  function fitOps() {
-    map.fitBounds(boundsOps, hudPad());
+  function fitDay() {
+    const layers = opsLayer.getLayers().slice();
+    Object.keys(markers).forEach(function (id) { layers.push(markers[id]); });
+    Object.keys(caseMarkers).forEach(function (id) { layers.push(caseMarkers[id]); });
+    if (!layers.length) {
+      map.fitBounds(boundsOps, hudPad());
+      return;
+    }
+    map.fitBounds(L.featureGroup(layers).getBounds().pad(0.1), hudPad());
   }
 
   function buildQuery() {
-    const period = periodEl.value;
-    const custom = period === "custom";
+    const custom = selectedDay !== "today";
+    const key = activeDayKey();
     const params = new URLSearchParams();
     params.set("wilayah", "IN");
     params.set("filterperiode", custom ? "true" : "false");
-    params.set("from", custom && dateEl.value ? dateEl.value : "");
-    params.set("to", custom && dateEl.value ? dateEl.value : "");
-    params.set("late", custom ? "custom" : period);
+    params.set("from", custom ? key : "");
+    params.set("to", custom ? key : "");
+    params.set("late", custom ? "custom" : "24");
     params.set("provinsi", PROVINSI_KALTIM);
     params.set("kabkota", "");
     ["NASA-MODIS", "NASA-SNPP", "NASA-NOAA20"].forEach(function (name) {
@@ -192,6 +339,7 @@
     const lat = Number(p.lat != null ? p.lat : g[1]);
     const lng = Number(p.long != null ? p.long : g[0]);
     return {
+      kind: "sipongi",
       id: [p.sumber, lat, lng, p.date_hotspot_ori || p.hs_id, index].join("_"),
       site: p.kecamatan || "Tidak diketahui",
       name: p.desa || p.kecamatan || "Hotspot",
@@ -219,6 +367,177 @@
     return json.features;
   }
 
+  function mapLaporan(rep, index) {
+    const op = (rep && rep.operasi_karhutla) || {};
+    const tim = op.jumlah_tim || {};
+    const evalRep = (rep && rep.evaluasi) || {};
+    const plus = evalRep.kelebihan || {};
+    const minus = evalRep.kekurangan || {};
+    const docs = (rep && rep.dokumentasi) || {};
+    const place = splitLokasi(op.lokasi_pemadaman);
+    const xy = parseCoord(op.titik_koordinat_pemadaman);
+    return {
+      used: false,
+      sheet: dash(rep.sheet_name),
+      tanggal: dayKey(op.tanggal),
+      site: place.site,
+      lokasi: place.lokasi,
+      lat: xy.lat,
+      lng: xy.lng,
+      coordRaw: op.titik_koordinat_pemadaman,
+      mulai: dash(op.mulai_operasi),
+      selesai: dash(op.selesai_operasi),
+      titikApi: dash(op.jumlah_titik_api_yang_dipadamkan),
+      timBc: dash(tim.berau_coal),
+      volunteer: dash(tim.volunteer),
+      unit: dash(tim.unit_support),
+      alat: dash(tim.peralatan_yang_digunakan),
+      konsumsi: dash(tim.konsumsi),
+      plusTim: dash(plus.jumlah_tim),
+      plusUnit: dash(plus.unit_support),
+      plusAlat: dash(plus.peralatan),
+      plusKonsumsi: dash(plus.konsumsi),
+      minusTim: dash(minus.jumlah_tim),
+      minusUnit: dash(minus.unit_support),
+      minusAlat: dash(minus.peralatan_yang_digunakan),
+      minusKonsumsi: dash(minus.konsumsi),
+      rencana: dash(rep.rencana_kegiatan_besok),
+      docsCount: docs.jumlah_gambar_tertanam,
+      docsNote: dash(docs.catatan),
+      index: index
+    };
+  }
+
+  function attachLaporan(base, lap) {
+    if (!lap) return base;
+    ["sheet", "lokasi", "mulai", "selesai", "titikApi", "timBc", "volunteer", "unit", "alat", "konsumsi",
+      "plusTim", "plusUnit", "plusAlat", "plusKonsumsi", "minusTim", "minusUnit", "minusAlat", "minusKonsumsi",
+      "rencana", "docsCount", "docsNote", "coordRaw"].forEach(function (key) {
+      if (lap[key] != null && lap[key] !== "—") base[key] = lap[key];
+    });
+    if (!hasCoord(base) && hasCoord(lap)) {
+      base.lat = lap.lat;
+      base.lng = lap.lng;
+    }
+    if (lap.site && lap.site !== "—") base.site = lap.site;
+    return base;
+  }
+
+  function mergeCases(records, reports) {
+    const laps = (reports || []).map(mapLaporan);
+    const out = [];
+    (records || []).forEach(function (rec, index) {
+      const lat = Number(rec.latitude);
+      const lng = Number(rec.longitude);
+      const key = dayKey(rec.tanggal);
+      const origin = firstCoord(rec.titik_koordinat_respon_awal);
+      let best = null;
+      let bestD = Infinity;
+      laps.forEach(function (lap) {
+        if (lap.used || lap.tanggal !== key) return;
+        let d = 99;
+        if (hasCoord(lap) && Number.isFinite(lat) && Number.isFinite(lng)) d = haversineKm(lat, lng, lap.lat, lap.lng);
+        else if (String(lap.site).toLowerCase() === String(rec.site || "").toLowerCase()) d = 2.5;
+        if (d < bestD) {
+          bestD = d;
+          best = lap;
+        }
+      });
+      if (best && bestD <= MATCH_KM) best.used = true;
+      else best = null;
+      const item = {
+        kind: "kasus",
+        id: "kasus-" + (index + 1),
+        tanggal: key,
+        site: rec.site || "—",
+        lokasi: splitLokasi((rec.notifikasi || "").split("_")[2] || rec.site).lokasi,
+        lat: lat,
+        lng: lng,
+        originLat: origin.lat,
+        originLng: origin.lng,
+        originRaw: rec.titik_koordinat_respon_awal,
+        responder: dash(rec.yang_merespon),
+        notifikasi: rec.notifikasi || "",
+        keterangan: rec.keterangan,
+        eksternal: isEksternal(rec, lat, lng),
+        media: {
+          photos: [DEMO_PHOTOS[index % DEMO_PHOTOS.length], DEMO_PHOTOS[(index + 1) % DEMO_PHOTOS.length]],
+          video: null
+        }
+      };
+      if (!(item.lokasi && item.lokasi !== "—")) item.lokasi = rec.site || "Penanganan KARHUTLA";
+      out.push(attachLaporan(item, best));
+    });
+    laps.forEach(function (lap) {
+      if (lap.used) return;
+      const origin = { lat: NaN, lng: NaN };
+      out.push(attachLaporan({
+        kind: "kasus",
+        id: "kasus-lap-" + (lap.index + 1),
+        tanggal: lap.tanggal,
+        site: lap.site,
+        lokasi: lap.lokasi,
+        lat: lap.lat,
+        lng: lap.lng,
+        originLat: origin.lat,
+        originLng: origin.lng,
+        originRaw: "",
+        responder: lap.timBc,
+        notifikasi: "",
+        keterangan: null,
+        eksternal: hasCoord(lap) ? !insideIupk(lap.lat, lap.lng) : false,
+        media: {
+          photos: [DEMO_PHOTOS[lap.index % DEMO_PHOTOS.length]],
+          video: null
+        }
+      }, lap));
+    });
+    out.sort(function (a, b) {
+      if (a.tanggal === b.tanggal) return (a.mulai || "").localeCompare(b.mulai || "");
+      return a.tanggal < b.tanggal ? 1 : -1;
+    });
+    return out;
+  }
+
+  function loadCases() {
+    const recs = window.KARHUTLA_CASE_DATA && window.KARHUTLA_CASE_DATA.sheets && window.KARHUTLA_CASE_DATA.sheets[0]
+      ? window.KARHUTLA_CASE_DATA.sheets[0].records
+      : [];
+    const reports = window.KARHUTLA_LAPORAN_DATA && window.KARHUTLA_LAPORAN_DATA.reports
+      ? window.KARHUTLA_LAPORAN_DATA.reports
+      : [];
+    CASES = mergeCases(recs, reports);
+    DATE_KEYS = Array.from(new Set(CASES.map(function (c) { return c.tanggal; }).filter(Boolean))).sort();
+    if (DATE_KEYS.length) selectedDay = DATE_KEYS[DATE_KEYS.length - 1];
+    renderDateStrip();
+  }
+
+  function dayCases() {
+    const key = activeDayKey();
+    return CASES.filter(function (item) {
+      if (item.tanggal !== key) return false;
+      if (scope === "internal") return !item.eksternal;
+      if (scope === "eksternal") return item.eksternal;
+      return true;
+    });
+  }
+
+  function nearestCase(item) {
+    if (!hasCoord(item)) return null;
+    const key = activeDayKey();
+    let best = null;
+    let bestD = NEAR_KM;
+    CASES.forEach(function (row) {
+      if (row.tanggal !== key || !hasCoord(row)) return;
+      const d = haversineKm(item.lat, item.lng, row.lat, row.lng);
+      if (d < bestD) {
+        bestD = d;
+        best = row;
+      }
+    });
+    return best;
+  }
+
   async function loadHotspots() {
     if (loading) return;
     loading = true;
@@ -228,110 +547,96 @@
     for (let i = 0; i < SIPONGI_APIS.length; i += 1) {
       try {
         const features = await fetchFrom(SIPONGI_APIS[i]);
-        const area = areaEl.value;
         HOTSPOTS = features
           .map(mapFeature)
           .filter(function (item) {
             if (Number.isNaN(item.lat) || Number.isNaN(item.lng)) return false;
-            if (area === "berau") return String(item.kab).toLowerCase() === "berau";
-            return true;
+            return String(item.kab).toLowerCase() === "berau";
           });
         lastFetchAt = new Date();
-        fillKecamatan();
-        selectedId = null;
-        renderDetail(null);
-        renderSat();
-        renderList();
-        renderMarkers();
-        sourceEl.textContent = "Sumber data: SIPONGI KEMENHUT • " + HOTSPOTS.length + " titik " + (area === "berau" ? "Berau" : "Kaltim") + " • diperbarui " + lastFetchAt.toLocaleTimeString("id-ID");
-        liveStatus.textContent = HOTSPOTS.length ? (HOTSPOTS.length + " hotspot aktif pada periode ini") : "Tidak ada hotspot pada periode ini";
         loadingEl.hidden = true;
         refreshBtn.disabled = false;
         loading = false;
-        if (HOTSPOTS.length) {
-          const group = L.featureGroup(Object.keys(markers).map(function (id) { return markers[id]; }));
-          if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.18), hudPad());
-        } else {
-          fitOps();
-        }
+        selectedId = null;
+        paint();
+        fitDay();
         return;
       } catch (err) {
         lastError = err;
       }
     }
+    HOTSPOTS = [];
     loadingEl.hidden = true;
     refreshBtn.disabled = false;
     loading = false;
-    sourceEl.textContent = "Gagal memuat SiPongi. Coba muat ulang.";
-    liveStatus.textContent = lastError ? String(lastError.message) : "Koneksi gagal";
+    sourceEl.textContent = "SiPongi belum termuat. Penanganan terverifikasi tetap ditampilkan.";
+    liveStatus.textContent = lastError ? String(lastError.message) : "Koneksi SiPongi gagal";
+    paint();
+    fitDay();
   }
 
-  function fillKecamatan() {
-    const current = siteEl.value;
-    const names = ["Semua kecamatan"].concat(Array.from(new Set(HOTSPOTS.map(function (item) { return item.site; }))).sort());
-    siteEl.innerHTML = "";
-    names.forEach(function (name) {
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      siteEl.appendChild(opt);
-    });
-    if (names.indexOf(current) !== -1) siteEl.value = current;
-  }
-
-  function filtered() {
-    const site = siteEl.value || "Semua kecamatan";
-    const conf = statusEl.value;
-    return HOTSPOTS.filter(function (item) {
-      return (site === "Semua kecamatan" || item.site === site) && (conf === "semua" || item.conf === conf);
-    });
-  }
-
-  function renderSat() {
-    const rows = filtered();
-    satGrid.innerHTML = SATS.map(function (satItem) {
-      const group = rows.filter(function (item) { return item.sat === satItem.id; });
-      const low = group.filter(function (i) { return i.conf === "low"; }).length;
-      const med = group.filter(function (i) { return i.conf === "medium"; }).length;
-      const high = group.filter(function (i) { return i.conf === "high"; }).length;
-      return (
-        '<div class="sat-block"><h3>' + satItem.label + "</h3><ul>" +
-          '<li><i class="diamond low"></i>' + low + "</li>" +
-          '<li><i class="diamond medium"></i>' + med + "</li>" +
-          '<li><i class="diamond high"></i>' + high + "</li>" +
-          "<li>" + group.length + "</li>" +
-        "</ul></div>"
-      );
+  function renderDateStrip() {
+    const keys = ["today"].concat(DATE_KEYS.slice().reverse());
+    dateStrip.innerHTML = keys.map(function (key) {
+      const on = key === selectedDay ? " is-on" : "";
+      const count = key === "today"
+        ? ""
+        : " · " + CASES.filter(function (c) { return c.tanggal === key; }).length;
+      return '<button type="button" class="date-chip' + on + '" data-day="' + key + '">' +
+        esc(chipLabel(key)) + (count ? "<i>" + count.replace(" · ", "") + "</i>" : "") +
+        "</button>";
     }).join("");
   }
 
+  function renderSummary() {
+    const cases = CASES.filter(function (c) { return c.tanggal === activeDayKey(); });
+    const internal = cases.filter(function (c) { return !c.eksternal; }).length;
+    const eksternal = cases.filter(function (c) { return c.eksternal; }).length;
+    sumSipongi.textContent = String(HOTSPOTS.length);
+    sumInternal.textContent = String(internal);
+    sumEksternal.textContent = String(eksternal);
+    const label = selectedDay === "today" ? "Hari ini (24 jam)" : formatDate(selectedDay);
+    sourceEl.textContent = "Berau · " + label + " · SiPongi " + HOTSPOTS.length + " · Internal " + internal + " · Eksternal " + eksternal +
+      (lastFetchAt ? " · " + lastFetchAt.toLocaleTimeString("id-ID") : "");
+    liveStatus.textContent = cases.length
+      ? (internal + " respon internal, " + eksternal + " eksternal")
+      : (HOTSPOTS.length ? HOTSPOTS.length + " hotspot SiPongi, belum ada penanganan terverifikasi" : "Tidak ada titik pada tanggal ini");
+  }
+
   function renderList() {
-    if (listMode === "kasus") {
-      countEl.textContent = String(CASES.length);
-      listEl.innerHTML = CASES.length ? CASES.map(function (item) {
+    const cases = dayCases();
+    const spots = showSipongi ? HOTSPOTS : [];
+    const total = spots.length + cases.length;
+    countEl.textContent = String(total);
+    let html = "";
+    if (spots.length) {
+      html += '<p class="list-group">Hotspot satelit</p>';
+      html += spots.map(function (item) {
         const on = item.id === selectedId ? " is-on" : "";
         return (
-          '<button class="hotspot-item' + on + '" type="button" data-id="' + item.id + '">' +
-            '<span class="pin-mini kasus"><i></i></span>' +
-            '<span class="copy"><b>' + esc(item.lokasi) + '</b><span class="meta">' + esc(item.tanggal) + " · " + esc(item.site) + "</span></span>" +
-            '<span class="badge kasus">' + (item.eksternal ? "Eksternal" : "Internal") + "</span>" +
+          '<button class="hotspot-item' + on + '" type="button" data-id="' + esc(item.id) + '">' +
+            '<span class="pin-mini ' + item.level + '"><i></i></span>' +
+            '<span class="copy"><b>' + esc(item.name) + '</b><span class="meta">' + esc(item.source) + " · " + esc(item.kec) + "</span></span>" +
+            '<span class="badge ' + item.level + '">' + LEVELS[item.level].badge + "</span>" +
           "</button>"
         );
-      }).join("") : '<p class="demo-note">Data kejadian belum termuat.</p>';
-      return;
+      }).join("");
     }
-    const rows = filtered();
-    countEl.textContent = String(rows.length);
-    listEl.innerHTML = rows.length ? rows.map(function (item) {
-      const on = item.id === selectedId ? " is-on" : "";
-      return (
-        '<button class="hotspot-item' + on + '" type="button" data-id="' + item.id + '">' +
-          '<span class="pin-mini ' + item.level + '"><i></i></span>' +
-          '<span class="copy"><b>' + item.name + '</b><span class="meta">' + item.source + " · " + item.kec + "</span></span>" +
-          '<span class="badge ' + item.level + '">' + LEVELS[item.level].badge + "</span>" +
-        "</button>"
-      );
-    }).join("") : '<p class="demo-note">Tidak ada hotspot untuk filter ini.</p>';
+    if (cases.length) {
+      html += '<p class="list-group">Penanganan terverifikasi</p>';
+      html += cases.map(function (item) {
+        const on = item.id === selectedId ? " is-on" : "";
+        const kind = item.eksternal ? "kasus" : "internal";
+        return (
+          '<button class="hotspot-item' + on + '" type="button" data-id="' + item.id + '">' +
+            '<span class="pin-mini ' + kind + '"><i></i></span>' +
+            '<span class="copy"><b>' + esc(item.lokasi) + '</b><span class="meta">' + esc(item.site) + " · " + esc(item.mulai || item.responder) + "</span></span>" +
+            '<span class="badge ' + kind + '">' + (item.eksternal ? "Eksternal" : "Internal") + "</span>" +
+          "</button>"
+        );
+      }).join("");
+    }
+    listEl.innerHTML = html || '<p class="demo-note">Tidak ada hotspot atau penanganan pada tanggal ini.</p>';
   }
 
   function renderMarkers() {
@@ -339,10 +644,12 @@
       map.removeLayer(markers[id]);
       delete markers[id];
     });
-    filtered().forEach(function (item) {
+    if (!showSipongi) return;
+    HOTSPOTS.forEach(function (item) {
       const marker = L.marker([item.lat, item.lng], {
         icon: markerIcon(item.level, item.id === selectedId),
-        title: item.name
+        title: item.name,
+        zIndexOffset: 400
       }).addTo(map);
       marker.on("click", function () { select(item.id, true); });
       markers[item.id] = marker;
@@ -355,10 +662,10 @@
       delete caseMarkers[id];
     });
     if (!showKasus) return;
-    CASES.forEach(function (item) {
-      if (Number.isNaN(item.lat) || Number.isNaN(item.lng)) return;
+    dayCases().forEach(function (item) {
+      if (!hasCoord(item)) return;
       const marker = L.marker([item.lat, item.lng], {
-        icon: kasusIcon(item.id === selectedId),
+        icon: kasusIcon(item, item.id === selectedId),
         title: item.lokasi + " · " + item.site,
         zIndexOffset: 800
       }).addTo(map);
@@ -367,87 +674,143 @@
     });
   }
 
-  function renderCaseDetail(item) {
-    const n = item.notif;
-    emptyEl.hidden = true;
-    cardEl.hidden = false;
-    detailPane.classList.add("is-open");
-    cardEl.innerHTML =
-      "<small>Kejadian lapangan · " + esc(item.site) + "</small>" +
-      "<h2>" + esc(item.lokasi) + "</h2>" +
-      '<p><span class="badge kasus">' + (item.eksternal ? "Eksternal" : "Internal") + "</span></p>" +
-      '<p class="notif-box">' + esc(n.raw) + "</p>" +
-      '<div class="detail-grid">' +
-        "<div><span>Tanggal</span><strong>" + esc(formatDate(item.tanggal)) + "</strong></div>" +
-        "<div><span>Site</span><strong>" + esc(item.site) + "</strong></div>" +
-        "<div><span>Perusahaan</span><strong>" + esc(n.perusahaan || "—") + "</strong></div>" +
-        "<div><span>Jam dilaporkan</span><strong>" + esc(n.jamLapor || n.jamKejadian || "—") + "</strong></div>" +
-        "<div><span>Koordinat</span><strong>" + item.lat.toFixed(6) + ", " + item.lng.toFixed(6) + "</strong></div>" +
-        "<div><span>Yang merespon</span><strong>" + esc(item.respon) + "</strong></div>" +
-        "<div class='span-2'><span>Korban / lingkungan</span><strong>" + esc(n.korban || "—") + "</strong></div>" +
-        "<div class='span-2'><span>Tindakan</span><strong>" + esc(n.tindakan || "Tim ER merespon ke lokasi.") + "</strong></div>" +
-        "<div class='span-2'><span>Koordinat respon awal</span><strong>" + esc(item.responAwal) + "</strong></div>" +
-      "</div>" +
-      '<div class="detail-actions">' +
-        '<button class="go" type="button" id="focus-spot">Fokuskan di peta</button>' +
-      "</div>" +
-      '<p class="demo-note">Data kasus lapangan Berau Coal OHS.</p>';
-    const focus = document.getElementById("focus-spot");
-    if (focus) {
-      focus.addEventListener("click", function () {
-        map.flyTo([item.lat, item.lng], 14, { duration: 0.8 });
-      });
-    }
-  }
-  function satLabel(id) {
-    const found = SATS.find(function (s) { return s.id === id; });
-    return found ? found.label : id;
+  function addRoute(item, emphasize) {
+    if (!hasCoord(item) || !Number.isFinite(item.originLat) || !Number.isFinite(item.originLng)) return;
+    const color = item.eksternal ? "#ef5a36" : "#86d15c";
+    L.polyline([[item.originLat, item.originLng], [item.lat, item.lng]], {
+      color: color,
+      weight: emphasize ? 3.2 : 2,
+      opacity: emphasize ? 0.95 : 0.55,
+      dashArray: "7 6"
+    }).addTo(routeLayer);
+    L.marker([item.originLat, item.originLng], {
+      icon: baseIcon(),
+      title: "Base respon · " + dash(item.responder),
+      zIndexOffset: 700
+    }).addTo(routeLayer);
   }
 
-  function applyCaseRecords(records) {
-    CASES = (records || []).map(function (rec, index) {
-      const notif = parseNotif(rec.notifikasi);
-      return {
-        kind: "kasus",
-        id: "kasus-" + (rec.excel_row || index + 1),
-        tanggal: rec.tanggal,
-        site: rec.site || "—",
-        lokasi: notif.lokasi || notif.uraian || rec.site || "Kejadian Karhutla",
-        lat: Number(rec.latitude),
-        lng: Number(rec.longitude),
-        respon: String(rec.yang_merespon || "—").replace(/\n/g, ", "),
-        responAwal: rec.titik_koordinat_respon_awal ? String(rec.titik_koordinat_respon_awal).replace(/\n/g, " · ") : "—",
-        eksternal: String(rec.keterangan || "").toLowerCase() === "eksternal",
-        notif: notif
-      };
-    });
-    renderCaseMarkers();
-    if (listMode === "kasus") renderList();
-  }
-
-  function loadCases() {
-    const bundled = window.KARHUTLA_CASE_DATA;
-    const records = bundled && bundled.sheets && bundled.sheets[0] && bundled.sheets[0].records;
-    if (records) {
-      applyCaseRecords(records);
+  function renderRoutes() {
+    routeLayer.clearLayers();
+    const all = showAllRoutesEl && showAllRoutesEl.checked;
+    const selected = findItem(selectedId);
+    if (all) {
+      dayCases().forEach(function (item) { addRoute(item, selected && item.id === selected.id); });
       return;
     }
-    fetch("Data_Titik_Koordinat_Karhutla.json")
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
-      .then(function (json) {
-        applyCaseRecords(json.sheets && json.sheets[0] && json.sheets[0].records);
-      })
-      .catch(function (err) {
-        console.error("Gagal memuat data kejadian", err);
-      });
+    if (selected && selected.kind === "kasus") addRoute(selected, true);
   }
 
   function findItem(id) {
+    if (!id) return null;
     return CASES.find(function (row) { return row.id === id; }) ||
       HOTSPOTS.find(function (row) { return row.id === id; });
+  }
+
+  function renderMedia(item) {
+    const photos = (item.media && item.media.photos) || [];
+    const gallery = photos.map(function (src) {
+      return '<img src="' + esc(src) + '" alt="Dokumentasi operasi ' + esc(item.lokasi) + '">';
+    }).join("");
+    const poster = photos[0] || DEMO_PHOTOS[0];
+    return (
+      '<p class="detail-section">Dokumentasi lapangan</p>' +
+      '<div class="media-gallery">' + gallery + "</div>" +
+      '<div class="video-slot">' +
+        '<img src="' + esc(poster) + '" alt="">' +
+        "<span>Video belum diunggah</span>" +
+      "</div>"
+    );
+  }
+
+  function renderCaseDetail(item) {
+    emptyEl.hidden = true;
+    cardEl.hidden = false;
+    detailPane.classList.add("is-open");
+    const coordText = hasCoord(item) ? item.lat.toFixed(6) + ", " + item.lng.toFixed(6) : dash(item.coordRaw);
+    const originText = Number.isFinite(item.originLat)
+      ? item.originLat.toFixed(6) + ", " + item.originLng.toFixed(6)
+      : dash(item.originRaw);
+    cardEl.innerHTML =
+      "<small>Penanganan terverifikasi · " + esc(formatDate(item.tanggal)) + "</small>" +
+      "<h2>" + esc(item.lokasi) + "</h2>" +
+      '<p><span class="badge ' + (item.eksternal ? "kasus" : "internal") + '">' + (item.eksternal ? "Eksternal" : "Internal") + "</span></p>" +
+      (item.notifikasi ? '<p class="lead-mini">' + esc(item.notifikasi.replace(/_/g, " · ")) + "</p>" : "") +
+      '<p class="detail-section">Personil &amp; unit</p>' +
+      '<div class="detail-grid">' +
+        "<div class='span-2'><span>Tim Berau Coal</span><strong>" + esc(item.timBc) + "</strong></div>" +
+        "<div class='span-2'><span>Volunteer</span><strong>" + esc(item.volunteer) + "</strong></div>" +
+        "<div class='span-2'><span>Yang merespon</span><strong>" + esc(item.responder) + "</strong></div>" +
+        "<div class='span-2'><span>Unit support</span><strong>" + esc(item.unit) + "</strong></div>" +
+        "<div class='span-2'><span>Peralatan</span><strong>" + esc(item.alat) + "</strong></div>" +
+        "<div class='span-2'><span>Konsumsi</span><strong>" + esc(item.konsumsi) + "</strong></div>" +
+      "</div>" +
+      '<p class="detail-section">Operasi</p>' +
+      '<div class="detail-grid">' +
+        "<div><span>Mulai</span><strong>" + esc(item.mulai) + "</strong></div>" +
+        "<div><span>Selesai</span><strong>" + esc(item.selesai) + "</strong></div>" +
+        "<div class='span-2'><span>Site</span><strong>" + esc(item.site) + "</strong></div>" +
+        "<div class='span-2'><span>Titik api dipadamkan</span><strong>" + esc(item.titikApi) + "</strong></div>" +
+        "<div class='span-2'><span>Base respon</span><strong>" + esc(originText) + "</strong></div>" +
+        "<div class='span-2'><span>Titik api</span><strong>" + esc(coordText) + "</strong></div>" +
+      "</div>" +
+      '<p class="detail-section">Evaluasi</p>' +
+      '<div class="detail-grid">' +
+        "<div class='span-2'><span>Kelebihan tim</span><strong>" + esc(item.plusTim) + "</strong></div>" +
+        "<div class='span-2'><span>Kelebihan unit</span><strong>" + esc(item.plusUnit) + "</strong></div>" +
+        "<div class='span-2'><span>Kekurangan tim</span><strong>" + esc(item.minusTim) + "</strong></div>" +
+        "<div class='span-2'><span>Kekurangan unit</span><strong>" + esc(item.minusUnit) + "</strong></div>" +
+        "<div class='span-2'><span>Kekurangan alat</span><strong>" + esc(item.minusAlat) + "</strong></div>" +
+      "</div>" +
+      renderMedia(item) +
+      (hasCoord(item)
+        ? '<div class="detail-actions"><button class="go" type="button" id="focus-spot">Fokuskan jalur respon</button></div>'
+        : "") +
+      '<p class="demo-note">Sumber: laporan operasi + data titik koordinat KARHUTLA. Foto contoh dari arsip aktivitas.</p>';
+    const focus = document.getElementById("focus-spot");
+    if (focus) {
+      focus.addEventListener("click", function () {
+        const pts = [[item.lat, item.lng]];
+        if (Number.isFinite(item.originLat)) pts.unshift([item.originLat, item.originLng]);
+        map.fitBounds(L.latLngBounds(pts).pad(0.35), hudPad());
+      });
+    }
+  }
+
+  function renderSipongiDetail(item) {
+    emptyEl.hidden = true;
+    cardEl.hidden = false;
+    detailPane.classList.add("is-open");
+    const near = nearestCase(item);
+    cardEl.innerHTML =
+      "<small>" + esc(item.source) + " · Berau</small>" +
+      "<h2>" + esc(item.name) + "</h2>" +
+      '<p><span class="badge ' + item.level + '">' + LEVELS[item.level].label + " · " + item.confidence + '%</span> <span class="badge selesai">Belum terverifikasi lapangan</span></p>' +
+      '<div class="detail-grid">' +
+        "<div><span>Koordinat</span><strong>" + item.lat.toFixed(5) + ", " + item.lng.toFixed(5) + "</strong></div>" +
+        "<div><span>Satelit</span><strong>" + esc(satLabel(item.sat)) + "</strong></div>" +
+        "<div><span>Desa</span><strong>" + esc(item.desa) + "</strong></div>" +
+        "<div><span>Kecamatan</span><strong>" + esc(item.kec) + "</strong></div>" +
+        "<div class='span-2'><span>Waktu deteksi</span><strong>" + esc(item.detected) + "</strong></div>" +
+      "</div>" +
+      (near
+        ? '<div class="detail-actions"><button class="go" type="button" id="open-near">Lihat penanganan terdekat · ' + esc(near.lokasi) + "</button></div>"
+        : "") +
+      '<div class="detail-actions">' +
+        '<button class="ghost" type="button" id="focus-spot">Fokuskan di peta</button>' +
+        '<a class="ghost" href="https://sipongi.gakkum.kehutanan.go.id/peta" target="_blank" rel="noopener">Buka SiPongi</a>' +
+      "</div>" +
+      '<p class="demo-note">Sumber: SIPONGI KEMENHUT. Hotspot satelit bukan bukti mutlak kebakaran.</p>';
+    const focus = document.getElementById("focus-spot");
+    if (focus) {
+      focus.addEventListener("click", function () {
+        map.flyTo([item.lat, item.lng], 13, { duration: 0.8 });
+      });
+    }
+    const openNear = document.getElementById("open-near");
+    if (openNear && near) {
+      openNear.addEventListener("click", function () { select(near.id, true); });
+    }
   }
 
   function renderDetail(item) {
@@ -461,102 +824,69 @@
       renderCaseDetail(item);
       return;
     }
-    emptyEl.hidden = true;
-    cardEl.hidden = false;
-    detailPane.classList.add("is-open");
-    cardEl.innerHTML =
-      "<small>" + item.source + " · " + item.kab + "</small>" +
-      "<h2>" + item.name + "</h2>" +
-      '<p><span class="badge ' + item.level + '">' + LEVELS[item.level].label + " · " + item.confidence + "%</span></p>" +
-      '<div class="detail-grid">' +
-        "<div><span>Koordinat</span><strong>" + item.lat.toFixed(5) + ", " + item.lng.toFixed(5) + "</strong></div>" +
-        "<div><span>Satelit</span><strong>" + satLabel(item.sat) + "</strong></div>" +
-        "<div><span>Desa</span><strong>" + item.desa + "</strong></div>" +
-        "<div><span>Kecamatan</span><strong>" + item.kec + "</strong></div>" +
-        "<div><span>Kabupaten</span><strong>" + item.kab + "</strong></div>" +
-        "<div><span>Waktu</span><strong>" + item.detected + "</strong></div>" +
-      "</div>" +
-      '<div class="detail-actions">' +
-        '<button class="go" type="button" id="focus-spot">Fokuskan di peta</button>' +
-        '<a class="ghost" href="https://sipongi.gakkum.kehutanan.go.id/peta" target="_blank" rel="noopener">Buka SiPongi</a>' +
-      "</div>" +
-      '<p class="demo-note">Sumber: SIPONGI KEMENHUT. Hotspot satelit bukan bukti mutlak kebakaran.</p>';
-    const focus = document.getElementById("focus-spot");
-    if (focus) {
-      focus.addEventListener("click", function () {
-        map.flyTo([item.lat, item.lng], 13, { duration: 0.8 });
-      });
-    }
+    renderSipongiDetail(item);
+  }
+
+  function paint() {
+    renderDateStrip();
+    renderSummary();
+    renderList();
+    renderMarkers();
+    renderCaseMarkers();
+    renderRoutes();
+    renderDetail(findItem(selectedId));
+    if (map.hasLayer(opsLayer)) opsLayer.bringToFront();
   }
 
   function select(id, fly) {
     selectedId = id;
     const item = findItem(id);
-    if (item && item.kind === "kasus") listMode = "kasus";
-    document.querySelectorAll("[data-list]").forEach(function (el) {
-      el.classList.toggle("is-on", el.getAttribute("data-list") === listMode);
-    });
-    satGrid.hidden = listMode === "kasus";
-    document.querySelector(".filters").hidden = listMode === "kasus";
-    renderSat();
-    renderList();
-    renderMarkers();
-    renderCaseMarkers();
-    renderDetail(item);
-    if (item && fly) map.flyTo([item.lat, item.lng], 14, { duration: 0.75 });
+    paint();
+    if (item && fly && hasCoord(item)) {
+      if (item.kind === "kasus" && Number.isFinite(item.originLat)) {
+        map.fitBounds(L.latLngBounds([[item.originLat, item.originLng], [item.lat, item.lng]]).pad(0.4), hudPad());
+      } else {
+        map.flyTo([item.lat, item.lng], 14, { duration: 0.75 });
+      }
+    }
   }
 
-  function refreshView() {
-    if (selectedId && String(selectedId).indexOf("kasus-") !== 0 && !filtered().some(function (item) { return item.id === selectedId; })) {
+  function setDay(key) {
+    selectedDay = key;
+    selectedId = null;
+    renderDateStrip();
+    loadHotspots();
+  }
+
+  dateStrip.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-day]");
+    if (!btn) return;
+    setDay(btn.getAttribute("data-day"));
+  });
+
+  document.querySelectorAll("[data-scope]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      scope = btn.getAttribute("data-scope");
+      document.querySelectorAll("[data-scope]").forEach(function (el) {
+        el.classList.toggle("is-on", el.getAttribute("data-scope") === scope);
+      });
       selectedId = null;
-      renderDetail(null);
-    }
-    renderSat();
-    renderList();
-    renderMarkers();
-    renderCaseMarkers();
-  }
-
-  function toggleDate() {
-    dateWrap.hidden = periodEl.value !== "custom";
-    if (!dateEl.value) {
-      const now = new Date();
-      dateEl.value = now.toISOString().slice(0, 10);
-    }
-  }
+      paint();
+    });
+  });
 
   listEl.addEventListener("click", function (e) {
     const btn = e.target.closest("[data-id]");
     if (!btn) return;
     select(btn.getAttribute("data-id"), true);
   });
-  siteEl.addEventListener("change", refreshView);
-  statusEl.addEventListener("change", refreshView);
-  periodEl.addEventListener("change", function () {
-    toggleDate();
-    loadHotspots();
-  });
-  dateEl.addEventListener("change", function () {
-    if (periodEl.value === "custom") loadHotspots();
-  });
-  areaEl.addEventListener("change", loadHotspots);
-  refreshBtn.addEventListener("click", loadHotspots);
 
-  document.querySelectorAll("[data-list]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      listMode = btn.getAttribute("data-list");
-      document.querySelectorAll("[data-list]").forEach(function (el) {
-        el.classList.toggle("is-on", el.getAttribute("data-list") === listMode);
-      });
-      satGrid.hidden = listMode === "kasus";
-      document.querySelector(".filters").hidden = listMode === "kasus";
-      renderList();
-    });
-  });
+  refreshBtn.addEventListener("click", loadHotspots);
+  if (showAllRoutesEl) showAllRoutesEl.addEventListener("change", renderRoutes);
 
   document.getElementById("zoom-in").addEventListener("click", function () { map.zoomIn(); });
   document.getElementById("zoom-out").addEventListener("click", function () { map.zoomOut(); });
-  document.getElementById("zoom-fit").addEventListener("click", fitOps);
+  document.getElementById("zoom-fit").addEventListener("click", fitDay);
 
   document.querySelectorAll("[data-layer]").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -585,31 +915,27 @@
         }
         return;
       }
+      if (layer === "sipongi") {
+        showSipongi = !showSipongi;
+        btn.classList.toggle("is-on", showSipongi);
+        paint();
+        return;
+      }
       if (layer === "kasus") {
         showKasus = !showKasus;
         btn.classList.toggle("is-on", showKasus);
-        renderCaseMarkers();
-        return;
-      }
-      if (layer === "fdrs") {
-        if (map.hasLayer(fdrsLayer)) {
-          map.removeLayer(fdrsLayer);
-          btn.classList.remove("is-on");
-        } else {
-          fdrsLayer.addTo(map);
-          btn.classList.add("is-on");
-        }
+        paint();
       }
     });
   });
 
-  document.querySelector("[data-layer='ops']").classList.add("is-on");
   opsLayer.addTo(map);
+  loadCases();
   setTimeout(function () {
     map.invalidateSize();
-    fitOps();
     loadHotspots();
-    loadCases();
   }, 180);
-  setInterval(loadHotspots, 5 * 60 * 1000);
+  setInterval(function () {
+    if (selectedDay === "today") loadHotspots();
+  }, 5 * 60 * 1000);
 })();
