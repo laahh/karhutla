@@ -161,12 +161,14 @@
     if (none) addPath(vert(diamond, none), gray, marker[gray]);
 
     if (padamkan) {
+      const smallX = (diamond.cx + diamond.r) / 2;
+      const smallY = (diamond.t + diamond.cy) / 2;
       addPath(
-        elbowRight(diamond.r - 4, diamond.t + 6, padamkan.l - 1, padamkan.cy),
+        elbowRight(smallX, smallY, padamkan.l - 1, padamkan.cy),
         smallC,
         marker[smallC]
       );
-      placeTag("lbl-small", (diamond.r + padamkan.l) / 2, Math.min(diamond.t + 4, padamkan.cy) - 4);
+      placeTag("lbl-small", (smallX + padamkan.l) / 2, Math.min(smallY, padamkan.cy) - 4);
     }
 
     const bracket = box("n-bracket");

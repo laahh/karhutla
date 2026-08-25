@@ -12,18 +12,16 @@
   <link rel="stylesheet" href="tahap.css">
 </head>
 <body class="page-tahap">
-  <img class="tp-bg" src="tahap.png" alt="" width="1024" height="576">
-  <div class="tp-vignette" aria-hidden="true"></div>
   <canvas class="embers" aria-hidden="true"></canvas>
 
   <header class="topbar">
-    <a class="brand" href="#beranda" aria-label="Berau Coal HSE Beranda">
+    <a class="brand" href="index.html" aria-label="Berau Coal HSE Beranda">
       <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
     </a>
     <nav class="desktop-nav" aria-label="Navigasi utama">
-    <a class="active" href="#beranda">Beranda</a>
+      <a href="index.html">Beranda</a>
       <a href="milestone.html">Milestone</a>
-      <a href="tahap.html">Tahap Pengendalian</a>
+      <a class="active" href="javascript:void(0)" aria-current="page">Tahap Pengendalian</a>
       <a href="fokus.html">Fokus Area</a>
       <a href="aktivitas.html">Aktivitas</a>
       <a href="kesiapan.html">Kesiapan Tim</a>
@@ -40,9 +38,9 @@
         <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </summary>
       <nav>
-        <a class="active" href="#beranda">Beranda</a>
+        <a href="index.html">Beranda</a>
         <a href="milestone.html">Milestone</a>
-        <a href="tahap.html">Tahap Pengendalian</a>
+        <a class="active" href="javascript:void(0)" aria-current="page">Tahap Pengendalian</a>
         <a href="fokus.html">Fokus Area</a>
         <a href="aktivitas.html">Aktivitas</a>
         <a href="kesiapan.html">Kesiapan Tim</a>
@@ -54,10 +52,14 @@
   </header>
 
   <main class="tp-main">
-    <div class="tp-hero">
-      <p class="eyebrow">PENANGANAN KARHUTLA PT BERAU COAL</p>
-      <h1>Tahap Pengendalian Karhutla</h1>
-      <p class="tp-lead">Pengendalian dilakukan dari Tahapan Deteksi hingga Titik Api Dipadamkan sesuai dengan Kriteria Api.</p>
+    <div class="tp-hero-banner">
+      <img class="tp-bg" src="tahap.png" alt="" width="1024" height="576">
+      <div class="tp-vignette" aria-hidden="true"></div>
+      <div class="tp-hero">
+        <p class="eyebrow">PENANGANAN KARHUTLA PT BERAU COAL</p>
+        <h1>Tahap Pengendalian Karhutla</h1>
+        <p class="tp-lead">Pengendalian dilakukan dari Tahapan Deteksi hingga Titik Api Dipadamkan sesuai dengan Kriteria Api.</p>
+      </div>
     </div>
 
     <section class="tp-flow" aria-label="Alur lima tahap pengendalian Karhutla">

@@ -39,31 +39,10 @@ html:has(.page-kesiapan) {
   .page-kesiapan .brand-meta { display: inline-flex; align-items: center; }
 }
 
-.ks-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  pointer-events: none;
-}
-
-.ks-vignette {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(5, 6, 7, .55) 0%, transparent 14%),
-    linear-gradient(0deg, rgba(5, 6, 7, .42) 0%, transparent 16%),
-    linear-gradient(90deg, rgba(5, 6, 7, .2) 0%, transparent 28%, transparent 72%, rgba(5, 6, 7, .16) 100%);
-}
-
 .page-kesiapan .embers {
   position: fixed;
   z-index: 2;
+  opacity: .55;
 }
 
 .ks-main {
@@ -75,14 +54,50 @@ html:has(.page-kesiapan) {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: clamp(8px, 1.1vh, 14px);
   padding: clamp(8px, 1.15vh, 14px) var(--pad) clamp(10px, 1.6vh, 18px);
+  background:
+    radial-gradient(720px 420px at 4% 0%, rgba(107, 180, 67, .13), transparent 60%),
+    radial-gradient(680px 460px at 98% 100%, rgba(239, 90, 54, .1), transparent 60%);
+}
+
+.ks-hero-banner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .35);
+  animation: rise .7s ease both;
+}
+
+.ks-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  pointer-events: none;
+}
+
+.ks-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(5, 6, 7, .88) 0%, rgba(5, 6, 7, .6) 46%, rgba(5, 6, 7, .28) 82%, rgba(5, 6, 7, .34) 100%),
+    linear-gradient(180deg, rgba(5, 6, 7, .32) 0%, transparent 40%, rgba(5, 6, 7, .3) 100%);
 }
 
 .ks-hero {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  animation: rise .7s ease both;
+  padding: clamp(14px, 2.2vh, 22px) clamp(18px, 2vw, 26px);
 }
 
 .page-kesiapan .ks-hero .eyebrow {
@@ -130,7 +145,20 @@ html:has(.page-kesiapan) {
   background: rgba(7, 12, 9, .62);
   box-shadow: 0 0 20px rgba(107, 180, 67, .08);
   backdrop-filter: blur(14px);
+  transition: transform .3s cubic-bezier(.16, 1, .3, 1), box-shadow .3s ease, border-color .3s ease;
+  animation: ks-card-in .55s cubic-bezier(.16, 1, .3, 1) both;
 }
+
+.ks-stats article:hover {
+  transform: translateY(-4px);
+  border-color: rgba(134, 209, 92, .85);
+  box-shadow: 0 12px 30px rgba(107, 180, 67, .2);
+}
+
+.ks-stats article:nth-child(1) { animation-delay: .1s; }
+.ks-stats article:nth-child(2) { animation-delay: .18s; }
+.ks-stats article:nth-child(3) { animation-delay: .26s; }
+.ks-stats article:nth-child(4) { animation-delay: .34s; }
 
 .ks-stats svg {
   width: 26px;
@@ -144,6 +172,8 @@ html:has(.page-kesiapan) {
   font-weight: 800;
   line-height: 1;
   letter-spacing: -1px;
+  text-shadow: 0 0 0 rgba(239, 90, 54, 0);
+  animation: ks-stat-pulse 2.6s ease-in-out 1.4s infinite;
 }
 
 .ks-stats h2,
@@ -189,7 +219,25 @@ html:has(.page-kesiapan) {
   background: rgba(7, 12, 9, .62);
   box-shadow: 0 0 18px rgba(107, 180, 67, .08);
   backdrop-filter: blur(14px);
+  transition: border-color .3s ease, box-shadow .3s ease;
 }
+
+.ks-panel:hover {
+  border-color: rgba(134, 209, 92, .8);
+  box-shadow: 0 0 26px rgba(107, 180, 67, .16);
+}
+
+.ks-panel--table {
+  animation: ks-panel-in-left .6s cubic-bezier(.16, 1, .3, 1) .3s both;
+}
+
+.ks-side .ks-panel {
+  animation: ks-panel-in-right .55s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.ks-side .ks-panel:nth-child(1) { animation-delay: .4s; }
+.ks-side .ks-panel:nth-child(2) { animation-delay: .5s; }
+.ks-side .ks-panel:nth-child(3) { animation-delay: .6s; }
 
 .ks-panel h2 {
   display: flex;
@@ -265,6 +313,16 @@ html:has(.page-kesiapan) {
   background: rgba(255, 255, 255, .03);
 }
 
+.ks-panel--table tbody tr,
+.ks-mini tbody tr {
+  transition: background .2s ease;
+}
+
+.ks-panel--table tbody tr:hover,
+.ks-mini tbody tr:hover {
+  background: rgba(107, 180, 67, .14);
+}
+
 .ks-panel--table tfoot th {
   background: #ef5a36;
   color: #fff;
@@ -303,8 +361,34 @@ html:has(.page-kesiapan) {
   border-color: rgba(255, 255, 255, .12);
 }
 
+@keyframes ks-card-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ks-stat-pulse {
+  0%, 100% { text-shadow: 0 0 0 rgba(239, 90, 54, 0); }
+  50% { text-shadow: 0 0 18px rgba(239, 90, 54, .6); }
+}
+
+@keyframes ks-panel-in-left {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ks-panel-in-right {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ks-hero { animation: none; }
+  .ks-hero-banner,
+  .ks-stats article,
+  .ks-stats strong,
+  .ks-panel--table,
+  .ks-side .ks-panel { animation: none; }
+
+  .ks-stats article:hover { transform: none; }
 }
 
 @media (max-height: 760px) {
@@ -330,6 +414,10 @@ html:has(.page-kesiapan) {
     white-space: normal;
     font-size: 28px;
   }
+
+  .ks-hero-banner { border-radius: 12px; }
+  .ks-bg { object-position: 68% 42%; }
+  .ks-hero { flex-wrap: wrap; align-items: flex-start; }
 
   .ks-main { grid-template-rows: auto auto auto; }
   .ks-stats,

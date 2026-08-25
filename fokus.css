@@ -39,31 +39,10 @@ html:has(.page-fokus) {
   .page-fokus .brand-meta { display: inline-flex; align-items: center; }
 }
 
-.fa-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  pointer-events: none;
-}
-
-.fa-vignette {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(5, 6, 7, .55) 0%, transparent 14%),
-    linear-gradient(0deg, rgba(5, 6, 7, .48) 0%, transparent 18%),
-    linear-gradient(90deg, rgba(5, 6, 7, .2) 0%, transparent 26%, transparent 74%, rgba(5, 6, 7, .16) 100%);
-}
-
 .page-fokus .embers {
   position: fixed;
   z-index: 2;
+  opacity: .55;
 }
 
 .fa-main {
@@ -76,6 +55,9 @@ html:has(.page-fokus) {
   grid-template-rows: minmax(0, 1fr);
   gap: clamp(12px, 1.4vw, 18px);
   padding: clamp(8px, 1.1vh, 14px) var(--pad) 0;
+  background:
+    radial-gradient(720px 420px at 4% 0%, rgba(107, 180, 67, .13), transparent 60%),
+    radial-gradient(680px 460px at 98% 100%, rgba(64, 196, 180, .1), transparent 60%);
 }
 
 .fa-side {
@@ -90,6 +72,37 @@ html:has(.page-fokus) {
   background: rgba(7, 12, 9, .6);
   box-shadow: 0 0 28px rgba(107, 180, 67, .1), inset 0 0 40px rgba(134, 209, 92, .04);
   backdrop-filter: blur(16px);
+  animation: fa-side-in .6s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.fa-hero-banner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .35);
+}
+
+.fa-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  pointer-events: none;
+}
+
+.fa-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(5, 6, 7, .88) 0%, rgba(5, 6, 7, .6) 46%, rgba(5, 6, 7, .28) 82%, rgba(5, 6, 7, .34) 100%),
+    linear-gradient(180deg, rgba(5, 6, 7, .32) 0%, transparent 40%, rgba(5, 6, 7, .3) 100%);
 }
 
 .fa-side h2 {
@@ -142,6 +155,7 @@ html:has(.page-fokus) {
   line-height: .85;
   letter-spacing: -4px;
   text-shadow: 0 0 28px rgba(134, 209, 92, .4);
+  animation: fa-stat-pulse 2.6s ease-in-out 1.4s infinite;
 }
 
 .fa-stat span {
@@ -182,12 +196,18 @@ html:has(.page-fokus) {
   gap: clamp(8px, 1.1vh, 12px);
 }
 
+.fa-hero-banner {
+  animation: rise .7s ease both;
+}
+
 .fa-hero {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  animation: rise .7s ease both;
+  padding: clamp(14px, 2.2vh, 22px) clamp(18px, 2vw, 26px);
 }
 
 .page-fokus .fa-hero .eyebrow {
@@ -234,8 +254,16 @@ html:has(.page-fokus) {
   font-size: 12px;
   font-weight: 650;
   cursor: pointer;
-  transition: .2s ease;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+  animation: fa-filter-in .4s ease both;
 }
+
+.fa-filters button:nth-child(1) { animation-delay: .5s; }
+.fa-filters button:nth-child(2) { animation-delay: .55s; }
+.fa-filters button:nth-child(3) { animation-delay: .6s; }
+.fa-filters button:nth-child(4) { animation-delay: .65s; }
+.fa-filters button:nth-child(5) { animation-delay: .7s; }
+.fa-filters button:nth-child(6) { animation-delay: .75s; }
 
 .fa-filters button[data-tone="green"] { border-color: rgba(134, 209, 92, .75); }
 .fa-filters button[data-tone="lime"] { border-color: rgba(166, 227, 90, .7); }
@@ -246,6 +274,7 @@ html:has(.page-fokus) {
 .fa-filters button:hover {
   color: #fff;
   background: rgba(255, 255, 255, .08);
+  transform: translateY(-2px);
 }
 
 .fa-filters button.is-active {
@@ -284,6 +313,13 @@ html:has(.page-fokus) {
   box-shadow: 0 0 18px rgba(107, 180, 67, .1);
   backdrop-filter: blur(12px);
   animation: rise .5s ease both;
+  transition: transform .3s cubic-bezier(.16, 1, .3, 1), box-shadow .3s ease, border-color .3s ease;
+}
+
+.fa-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(134, 209, 92, .85);
+  box-shadow: 0 14px 32px rgba(107, 180, 67, .22);
 }
 
 .fa-grid.is-full .fa-card:nth-child(7) { grid-column: 2 / 4; }
@@ -379,6 +415,7 @@ html:has(.page-fokus) {
   border-radius: 12px;
   background: rgba(7, 12, 9, .62);
   backdrop-filter: blur(14px);
+  animation: fa-card-in .6s cubic-bezier(.16, 1, .3, 1) .9s both;
 }
 
 .fa-note svg {
@@ -395,9 +432,36 @@ html:has(.page-fokus) {
   line-height: 1.4;
 }
 
+@keyframes fa-side-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fa-filter-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fa-card-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fa-stat-pulse {
+  0%, 100% { text-shadow: 0 0 28px rgba(134, 209, 92, .4); }
+  50% { text-shadow: 0 0 42px rgba(134, 209, 92, .75); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .fa-hero,
-  .fa-card { animation: none; }
+  .fa-hero-banner,
+  .fa-side,
+  .fa-filters button,
+  .fa-card,
+  .fa-note,
+  .fa-stat strong { animation: none; }
+
+  .fa-card:hover,
+  .fa-filters button:hover { transform: none; }
 }
 
 @media (max-height: 760px) {
@@ -425,6 +489,10 @@ html:has(.page-fokus) {
     white-space: normal;
     font-size: 26px;
   }
+
+  .fa-hero-banner { border-radius: 12px; }
+  .fa-bg { object-position: 68% 42%; }
+  .fa-hero { flex-wrap: wrap; align-items: flex-start; }
 
   .fa-main,
   .fa-grid { grid-template-columns: 1fr; }

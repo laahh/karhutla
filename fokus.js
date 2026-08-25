@@ -3,6 +3,26 @@
   const filters = document.querySelectorAll(".fa-filters button");
   if (!grid) return;
 
+  const countEl = document.getElementById("fa-count");
+  if (countEl) {
+    const target = Number(countEl.getAttribute("data-count")) || 0;
+    const duration = 900;
+    const delay = 250;
+    const start = performance.now() + delay;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReduced) {
+      countEl.textContent = target;
+    } else {
+      requestAnimationFrame(function tick(now) {
+        const p = Math.min(1, Math.max(0, (now - start) / duration));
+        const eased = 1 - Math.pow(1 - p, 3);
+        countEl.textContent = Math.round(eased * target);
+        if (p < 1) requestAnimationFrame(tick);
+      });
+    }
+  }
+
   const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.2"/></svg>';
 
   const AREAS = [
