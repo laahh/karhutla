@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Tahap pengendalian KARHUTLA PT Berau Coal dari deteksi hingga titik api dipadamkan.">
+  <title>Tahap Pengendalian • KARHUTLA Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="tahap.css">
+</head>
+<body class="page-tahap">
+  <img class="tp-bg" src="tahap.png" alt="" width="1024" height="576">
+  <div class="tp-vignette" aria-hidden="true"></div>
+  <canvas class="embers" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Berau Coal HSE Beranda">
+      <span>BERAU COAL</span><i>·</i><strong>OHS</strong>
+    </a>
+    <span class="brand-meta">KARHUTLA COMMAND CENTER</span>
+    <nav class="desktop-nav" aria-label="Navigasi utama">
+      <a href="index.html">Beranda</a>
+      <a href="hotspot.html">Hotspot</a>
+      <a href="milestone.html">Milestone</a>
+      <a class="active" href="tahap.html">Tahap</a>
+      <a href="index.html#prosedur">Prosedur</a>
+      <a href="index.html#laporan">Laporan</a>
+    </nav>
+    <a class="report-button" href="index.html#laporan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-2.7 7-6.4 0-2.7-1.5-5.2-4.4-7.6.1 2-1 3.1-2.1 3.8.3-3.4-1.4-6.4-4.5-8.8.2 3.1-1.8 5.3-3 7.4C3.8 12.3 5 15.2 5 16c0 3.3 3.1 6 7 6Z"/></svg>
+      Laporkan Titik Api
+    </a>
+    <details class="mobile-menu">
+      <summary aria-label="Buka menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </summary>
+      <nav>
+        <a href="index.html">Beranda</a>
+        <a href="hotspot.html">Hotspot</a>
+        <a href="milestone.html">Milestone</a>
+        <a href="tahap.html">Tahap</a>
+        <a href="index.html#prosedur">Prosedur</a>
+        <a href="index.html#laporan">Laporan</a>
+      </nav>
+    </details>
+  </header>
+
+  <main class="tp-main">
+    <div class="tp-hero">
+      <p class="eyebrow">PENANGANAN KARHUTLA PT BERAU COAL</p>
+      <h1>Tahap Pengendalian Karhutla</h1>
+      <p class="tp-lead">Pengendalian dilakukan dari Tahapan Deteksi hingga Titik Api Dipadamkan sesuai dengan Kriteria Api.</p>
+    </div>
+
+    <section class="tp-flow" aria-label="Alur lima tahap pengendalian Karhutla">
+      <svg class="flow-wires" aria-hidden="true"></svg>
+      <span class="flow-tag" id="lbl-small">Api kecil</span>
+      <span class="flow-tag flow-tag--big" id="lbl-big">Api besar</span>
+
+      <article class="flow-col flow-col--detect">
+        <header>01 DETECTION</header>
+        <div class="flow-body">
+          <div class="flow-node" id="n-start">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6.5v6.2c0 5.1-3.4 8.8-8 10.5-4.6-1.7-8-5.4-8-10.5V6.5L12 3Z"/><path d="M12 16.2c1.8 0 3.1-1.1 3.1-2.7 0-1.3-.7-2.4-2-3.4.1.9-.4 1.4-.9 1.7.1-1.5-.6-2.8-2-3.9.1 1.4-.8 2.3-1.4 3.2C8.3 12.4 8.9 13.8 8.9 14.1c0 1.4 1.4 2.1 3.1 2.1Z"/></svg>
+            Pengendalian Karhutla
+          </div>
+          <div class="flow-node" id="n-detect">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-3.5-3.5"/></svg>
+            Deteksi
+          </div>
+          <div class="flow-fork">
+            <div class="flow-node flow-node--sm" id="n-hotspot">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="16.5" cy="7.5" r="2.4"/><path d="m14.8 9.2-6.2 6.2M4 14.5c2.2 4 6 6.5 10.5 6.5"/><path d="M14.2 5.2 17 2.4M18.8 5.2 21.4 2.6"/></svg>
+              Informasi Hotspot
+            </div>
+            <div class="flow-node flow-node--sm" id="n-karyawan">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M5 20c.6-3.5 3.4-5.5 7-5.5s6.4 2 7 5.5"/></svg>
+              Informasi Karyawan
+            </div>
+            <div class="flow-node flow-node--sm" id="n-drone">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4.5 10.2 12 6l7.5 4.2v7.4L12 22l-7.5-4.4V10.2Z"/><path d="M8 9.2 16 13.6"/></svg>
+              Monitoring Drone
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="flow-col flow-col--verify">
+        <header>02 VERIFICATION</header>
+        <div class="flow-body">
+          <div class="flow-node" id="n-patrol">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 6 8v4c0 5 2.8 8.2 6 9.5C15.2 20.2 18 17 18 12V8l-6-4Z"/><circle cx="12" cy="11" r="2"/><path d="M9.5 16.5c.8-1.4 2-2 2.5-2s1.7.6 2.5 2"/></svg>
+            Patroli Pencegahan
+          </div>
+          <div class="flow-node" id="n-laporan-patroli">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7.2L19 8.3V20.5H7V3.5Z"/><path d="M14.2 3.5V8.3H19"/><path d="M10 12.2h6M10 15.6h6"/></svg>
+            Laporan Patroli
+          </div>
+        </div>
+      </article>
+
+      <article class="flow-col flow-col--decide">
+        <header>03 DECISION</header>
+        <div class="flow-body">
+          <div class="flow-diamond" id="n-diamond" aria-label="Tingkat Api?">
+            <span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-2.7 7-6.4 0-2.7-1.5-5.2-4.4-7.6.1 2-1 3.1-2.1 3.8.3-3.4-1.4-6.4-4.5-8.8.2 3.1-1.8 5.3-3 7.4C3.8 12.3 5 15.2 5 16c0 3.3 3.1 6 7 6Z"/></svg>
+              Tingkat Api?
+            </span>
+          </div>
+          <div class="flow-end" id="n-none">Tidak ada api</div>
+        </div>
+      </article>
+
+      <article class="flow-col flow-col--respond">
+        <header>04 RESPONSE</header>
+        <div class="flow-body">
+          <div class="flow-node" id="n-padamkan">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M10 21V9h4v12"/><path d="M9 9c0-3 1.5-5 3-6 1.5 1 3 3 3 6"/></svg>
+            Padamkan Api
+          </div>
+            <div class="flow-bracket" id="n-bracket">
+            <div class="flow-node" id="n-ic">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 6 8v4c0 5 2.8 8.2 6 9.5C15.2 20.2 18 17 18 12V8l-6-4Z"/><circle cx="12" cy="11" r="2"/></svg>
+              Incident Commander
+            </div>
+            <div class="flow-node" id="n-volunteer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.4"/><path d="M4 19c.4-3.2 2.8-5 5-5s4.6 1.8 5 5M14.2 14.2c1.6-.4 3.5.6 4.8 3.8"/></svg>
+              Aktifkan Fire Volunteer
+            </div>
+            <div class="flow-node" id="n-mobilisasi">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16V9h11v7"/><path d="M14 12h4.2L21 16v3h-2"/><circle cx="7" cy="18.5" r="2"/><circle cx="16.5" cy="18.5" r="2"/></svg>
+              Mobilisasi Tim Gabungan
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="flow-col flow-col--close">
+        <header>05 CLOSURE</header>
+        <div class="flow-body">
+          <div class="flow-chain" id="chain-s">
+            <div class="flow-node" id="n-padam-s">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6.5v6.2c0 5.1-3.4 8.8-8 10.5-4.6-1.7-8-5.4-8-10.5V6.5L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
+              Padam
+            </div>
+            <div class="flow-node" id="n-laporan-s">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7.2L19 8.3V20.5H7V3.5Z"/><path d="M14.2 3.5V8.3H19"/></svg>
+              Laporan
+            </div>
+          </div>
+          <div class="flow-chain" id="chain-b">
+            <div class="flow-node" id="n-padam-b">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6.5v6.2c0 5.1-3.4 8.8-8 10.5-4.6-1.7-8-5.4-8-10.5V6.5L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
+              Padam
+            </div>
+            <div class="flow-node" id="n-laporan-b">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7.2L19 8.3V20.5H7V3.5Z"/><path d="M14.2 3.5V8.3H19"/></svg>
+              Laporan
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="tp-bottom">
+      <section class="tp-panel tp-panel--blue">
+        <h2>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6.5v6.2c0 5.1-3.4 8.8-8 10.5-4.6-1.7-8-5.4-8-10.5V6.5L12 3Z"/></svg>
+          <span>01</span> Standar Pelaksanaan
+        </h2>
+        <ol>
+          <li>
+            <b>1</b>
+            <p>Pemadaman pada area yang telah difokuskan manajemen.</p>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+          </li>
+          <li>
+            <b>2</b>
+            <p>Menggunakan APD selama bertugas.</p>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 6 8v4c0 5 2.8 8.2 6 9.5C15.2 20.2 18 17 18 12V8l-6-4Z"/></svg>
+          </li>
+          <li>
+            <b>3</b>
+            <p>Pengecekan peralatan sebelum dan sesudah digunakan.</p>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7.2L19 8.3V20.5H7V3.5Z"/><path d="M10 12.2h6"/></svg>
+          </li>
+          <li>
+            <b>4</b>
+            <p>Memastikan tidak ada peralatan tertinggal saat meninggalkan lokasi pemadaman.</p>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8V6.5A2.5 2.5 0 0 1 10.5 4h3A2.5 2.5 0 0 1 16 6.5V8"/><path d="M5 8h14v11H5z"/></svg>
+          </li>
+          <li>
+            <b>5</b>
+            <p>Mengikuti instruksi dari On Scene Commander.</p>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15v-3a7 7 0 0 1 14 0v3"/><path d="M5 15H3v4h4v-4H5Zm16 0h-2v4h4v-4h-2Z"/></svg>
+          </li>
+        </ol>
+      </section>
+
+      <section class="tp-panel tp-panel--orange">
+        <h2>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg>
+          <span>02</span> Rencana Waktu dan Teknis Pemadaman
+        </h2>
+        <div class="tp-grid">
+          <article>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10M7 20h10M8 4c0 4.6 8 4.6 8 8s-8 3.4-8 8M16 4c0 4.6-8 4.6-8 8s8 3.4 8 8"/></svg>
+            <h3>Durasi</h3>
+            <p>Pemadaman dilakukan sampai tidak ditemukan titik api berpotensi tidak aman pada area operasional.</p>
+          </article>
+          <article>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15v-3a7 7 0 0 1 14 0v3"/><path d="M5 15H3v4h4v-4H5Z"/></svg>
+            <h3>Standby</h3>
+            <p>Volunteer disarankan on call di Station ERG BMO 2 untuk mengurangi delay time keberangkatan.</p>
+          </article>
+          <article>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.4"/><path d="M4 19c.4-3.2 2.8-5 5-5s4.6 1.8 5 5"/></svg>
+            <h3>Personel</h3>
+            <p>Melibatkan ER member, volunteer mitra kerja, dan departemen lainnya.</p>
+          </article>
+          <article>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+            <h3>Roster</h3>
+            <p>Jadwal tugas personil diatur oleh koordinator masing-masing.</p>
+          </article>
+          <article>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.5-5.8L20 8"/><path d="M20 4v4h-4M20 12a8 8 0 0 1-13.5 5.8L4 16"/><path d="M4 20v-4h4"/></svg>
+            <h3>Shift</h3>
+            <p>Pemadaman dilakukan 2 shift selama operasi KARHUTLA berlangsung.</p>
+          </article>
+          <article>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.2"/></svg>
+            <h3>Patroli</h3>
+            <p>Patroli area site PT Berau Coal untuk update dan memastikan lokasi kebakaran lainnya.</p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
+  <script src="tahap.js"></script>
+  <script src="embers.js"></script>
+  <script src="page-fire.js"></script>
+</body>
+</html>

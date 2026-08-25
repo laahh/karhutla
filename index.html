@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Pemantauan kebakaran hutan dan lahan terintegrasi Berau Coal HSE.">
+  <title>KARHUTLA Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <section class="hero" id="beranda">
+    <img
+      class="hero-photo"
+      src="karhutla-hero.png"
+      alt=""
+      width="1672"
+      height="941"
+    >
+
+    <canvas class="embers" aria-hidden="true"></canvas>
+
+    <header class="topbar">
+      <a class="brand" href="#beranda" aria-label="Berau Coal HSE Beranda">
+        <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
+      </a>
+      <nav class="desktop-nav" aria-label="Navigasi utama">
+      <a class="active" href="#beranda">Beranda</a>
+      <a href="hotspot.html">Hotspot</a>
+        <a href="milestone.html">Milestone</a>
+        <a href="tahap.html">Tahap</a>
+        <a href="#prosedur">Prosedur</a>
+        <a href="#laporan">Laporan</a>
+      </nav>
+      <a class="report-button" href="#laporan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-2.7 7-6.4 0-2.7-1.5-5.2-4.4-7.6.1 2-1 3.1-2.1 3.8.3-3.4-1.4-6.4-4.5-8.8.2 3.1-1.8 5.3-3 7.4C3.8 12.3 5 15.2 5 16c0 3.3 3.1 6 7 6Z"/></svg>
+        Laporkan Titik Api
+      </a>
+      <details class="mobile-menu">
+        <summary aria-label="Buka menu">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </summary>
+        <nav>
+          <a href="#beranda">Beranda</a>
+          <a href="hotspot.html">Hotspot</a>
+          <a href="milestone.html">Milestone</a>
+          <a href="tahap.html">Tahap</a>
+          <a href="#prosedur">Prosedur</a>
+          <a href="#laporan">Laporan</a>
+        </nav>
+      </details>
+    </header>
+
+    <div class="hero-main">
+      <div class="hero-copy">
+        <div class="alert-chip">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 21.5 20H2.5L12 3.2Z"/><path d="M12 10v4.2"/><path d="M12 17.2v.6"/></svg>
+          SIAGA KARHUTLA <b>·</b> MUSIM KEMARAU 2026
+        </div>
+        <p class="eyebrow">KARHUTLA COMMAND CENTER</p>
+        <h1>Deteksi lebih dini.<br>Kendalikan sebelum meluas.</h1>
+        <p class="lead">Pemantauan kebakaran hutan dan lahan terintegrasi untuk mempercepat deteksi, respons lapangan, dan eskalasi di seluruh wilayah operasi.</p>
+        <div class="actions">
+          <a class="primary" href="hotspot.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            Pantau Hotspot
+          </a>
+          <a class="secondary" href="#prosedur">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7.2L19 8.3V20.5H7V3.5Z"/><path d="M14.2 3.5V8.3H19"/><path d="M10 12.2h6M10 15.6h6"/></svg>
+            Lihat Prosedur Darurat
+          </a>
+        </div>
+      </div>
+
+      <aside class="live-card">
+        <span class="pulse"></span>
+        <div>
+          <small>STATUS TERKINI</small>
+          <p>Pemantauan aktif 24/7</p>
+        </div>
+        <div class="radar" aria-hidden="true"><span></span></div>
+      </aside>
+    </div>
+
+    <div class="hero-footer">
+      <div class="metric-panel" id="hotspot">
+        <article>
+          <span class="metric-icon orange">
+            <svg viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.7 7-6.4 0-2.7-1.5-5.2-4.4-7.6.1 2-1 3.1-2.1 3.8.3-3.4-1.4-6.4-4.5-8.8.2 3.1-1.8 5.3-3 7.4C3.8 12.3 5 15.2 5 16c0 3.3 3.1 6 7 6Z"/></svg>
+          </span>
+          <div>
+            <small>Hotspot Aktif</small>
+            <strong>--</strong>
+            <p>Titik</p>
+          </div>
+        </article>
+        <article>
+          <span class="metric-icon orange">
+            <svg viewBox="0 0 24 24"><path d="M12 3.2 21.5 20H2.5L12 3.2Z"/><path d="M12 10v4.2"/><path d="M12 17.2v.6"/></svg>
+          </span>
+          <div>
+            <small>Insiden YTD</small>
+            <strong>--</strong>
+            <p>Insiden</p>
+          </div>
+        </article>
+        <article>
+          <span class="metric-icon green">
+            <svg viewBox="0 0 24 24"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
+          </span>
+          <div>
+            <small>Area Terpantau</small>
+            <strong>--</strong>
+            <p>Ha</p>
+          </div>
+        </article>
+        <article>
+          <span class="metric-icon green">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg>
+          </span>
+          <div>
+            <small>Respons Terakhir</small>
+            <strong>--</strong>
+            <p>--</p>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <a class="scroll" href="#hotspot">
+      <span></span>
+      Scroll untuk jelajah
+      <i>⌄</i>
+    </a>
+  </section>
+
+  <section class="sr-only" id="insiden"><h2>Insiden</h2></section>
+  <section class="sr-only" id="kesiapsiagaan"><h2>Kesiapsiagaan</h2></section>
+  <section class="sr-only" id="prosedur"><h2>Prosedur</h2></section>
+  <section class="sr-only" id="laporan"><h2>Laporan</h2></section>
+</main>
+<canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
+<script src="embers.js"></script>
+<script src="page-fire.js"></script>
+</body>
+</html>
