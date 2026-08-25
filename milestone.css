@@ -392,6 +392,7 @@ html:has(.page-milestone) {
 
 @media (max-height: 760px) {
   .ms-tagline { display: none; }
+  .ms-chips { margin-top: 10px; }
 }
 
 @media (max-width: 900px) {
