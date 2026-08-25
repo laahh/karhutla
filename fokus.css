@@ -50,9 +50,8 @@ html:has(.page-fokus) {
   z-index: 4;
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(240px, .72fr) minmax(0, 1.9fr);
-  grid-template-rows: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: clamp(12px, 1.4vw, 18px);
   padding: clamp(8px, 1.1vh, 14px) var(--pad) 0;
   background:
@@ -60,11 +59,20 @@ html:has(.page-fokus) {
     radial-gradient(680px 460px at 98% 100%, rgba(64, 196, 180, .1), transparent 60%);
 }
 
+.fa-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(240px, .72fr) minmax(0, 1.9fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: clamp(12px, 1.4vw, 18px);
+}
+
 .fa-side {
   display: flex;
   flex-direction: column;
-  align-self: center;
-  height: auto;
+  align-self: stretch;
+  height: 100%;
   min-height: 0;
   padding: clamp(18px, 2.2vh, 24px) clamp(16px, 1.4vw, 20px);
   border: 1px solid rgba(134, 209, 92, .48);
@@ -169,7 +177,7 @@ html:has(.page-fokus) {
 }
 
 .fa-base {
-  margin-top: 18px;
+  margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, .1);
 }
@@ -193,7 +201,7 @@ html:has(.page-fokus) {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(8px, 1.1vh, 12px);
 }
 
@@ -323,8 +331,8 @@ html:has(.page-fokus) {
   box-shadow: 0 14px 32px rgba(107, 180, 67, .22);
 }
 
-.fa-grid.is-full .fa-card:nth-child(7) { grid-column: 2 / 4; }
-.fa-grid.is-full .fa-card:nth-child(8) { grid-column: 4 / 6; }
+.fa-grid.is-full .fa-card:nth-child(7) { grid-column: 1 / 4; }
+.fa-grid.is-full .fa-card:nth-child(8) { grid-column: 4 / 7; }
 
 .fa-card::before,
 .fa-card::after {
@@ -495,7 +503,7 @@ html:has(.page-fokus) {
   .fa-bg { object-position: 68% 42%; }
   .fa-hero { flex-wrap: wrap; align-items: flex-start; }
 
-  .fa-main,
+  .fa-body,
   .fa-grid { grid-template-columns: 1fr; }
-  .fa-content { grid-template-rows: auto auto auto; }
+  .fa-content { grid-template-rows: auto auto; }
 }
