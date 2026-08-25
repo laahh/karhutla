@@ -413,7 +413,7 @@ h1 {
 .metric-panel {
   min-height: clamp(84px, 13vh, 112px);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   align-items: center;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -599,14 +599,13 @@ h1 {
   }
   .live-card { margin-top: 24px; }
   .hero-footer { margin: 16px 0 64px; padding: 0; }
-  .metric-panel { grid-template-columns: 1fr 1fr; }
+  .metric-panel { grid-template-columns: 1fr; }
   .metric-panel article {
     min-height: 96px;
+    border-right: 0;
     border-bottom: 1px solid var(--line);
   }
-  .metric-panel article:nth-child(2) { border-right: 0; }
-  .metric-panel article:nth-child(3) { border-bottom: 0; }
-  .metric-panel article:nth-child(4) { border: 0; }
+  .metric-panel article:last-child { border-bottom: 0; }
   .scroll { display: none; }
   h1 { font-size: 32px; white-space: normal; }
   .actions { flex-direction: column; }
