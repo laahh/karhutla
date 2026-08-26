@@ -1,0 +1,289 @@
+html:has(.page-need-support) {
+  height: 100%;
+  overflow: hidden;
+}
+
+.page-need-support {
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+  background: #050607;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-need-support .topbar {
+  position: relative;
+  inset: auto;
+  flex: none;
+  z-index: 20;
+}
+
+.page-need-support .desktop-nav {
+  gap: clamp(10px, 1.6vw, 28px);
+}
+
+.page-need-support .embers {
+  position: fixed;
+  z-index: 2;
+  opacity: .55;
+}
+
+.ns-main {
+  position: relative;
+  z-index: 4;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(10px, 1.4vh, 18px);
+  padding: clamp(10px, 1.6vh, 20px) var(--pad) clamp(12px, 1.8vh, 20px);
+  background:
+    radial-gradient(720px 420px at 4% 0%, rgba(107, 180, 67, .13), transparent 60%),
+    radial-gradient(680px 460px at 98% 100%, rgba(239, 90, 54, .1), transparent 60%);
+}
+
+.ns-hero {
+  animation: rise .7s ease both;
+}
+
+.ns-hero .eyebrow {
+  margin: 0 0 3px;
+  color: var(--green-light);
+  font-size: clamp(10px, 1.15vh, 12px);
+  letter-spacing: 1.6px;
+}
+
+.page-need-support h1 {
+  white-space: nowrap;
+  max-width: none;
+  font-size: clamp(26px, 3.8vh, 40px);
+  letter-spacing: -1.2px;
+}
+
+.ns-lead {
+  margin: 6px 0 0;
+  max-width: 900px;
+  color: #d8dbdc;
+  font-size: clamp(12.5px, 1.5vh, 15px);
+  line-height: 1.5;
+}
+
+.ns-solutions {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(10px, 1.2vw, 16px);
+}
+
+.ns-solution {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(12px, 1.6vh, 18px) clamp(14px, 1.4vw, 20px);
+  border: 1px solid rgba(107, 180, 67, .48);
+  border-radius: 14px;
+  background: rgba(7, 12, 9, .62);
+  box-shadow: 0 0 20px rgba(107, 180, 67, .08);
+  backdrop-filter: blur(14px);
+  transition: border-color .3s ease, box-shadow .3s ease;
+  animation: ns-panel-in .6s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.ns-solution:hover {
+  border-color: rgba(134, 209, 92, .8);
+  box-shadow: 0 0 26px rgba(107, 180, 67, .16);
+}
+
+.ns-solution:nth-child(1) { animation-delay: .12s; }
+.ns-solution:nth-child(2) { animation-delay: .2s; }
+
+.ns-solution header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: clamp(10px, 1.4vh, 16px);
+}
+
+.ns-badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #86d15c;
+  background: rgba(107, 180, 67, .14);
+  border: 1px solid rgba(134, 209, 92, .55);
+}
+
+.ns-badge svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ns-solution h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(16px, 2vh, 20px);
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.ns-photos {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(8px, 1vw, 12px);
+}
+
+.ns-photos--single {
+  grid-template-columns: 1fr;
+}
+
+.ns-photo {
+  position: relative;
+  min-height: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed rgba(134, 209, 92, .38);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(135deg, rgba(107, 180, 67, .06) 0 10px, transparent 10px 20px),
+    rgba(255, 255, 255, .02);
+  color: rgba(198, 232, 154, .55);
+  text-align: center;
+}
+
+.ns-photo svg {
+  width: clamp(28px, 4vh, 40px);
+  height: clamp(28px, 4vh, 40px);
+  stroke-width: 1.4;
+}
+
+.ns-photo figcaption {
+  color: #9aa2a4;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.ns-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #2f5d20;
+  color: #d4ffb0;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+
+.ns-benefits {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(8px, 1vw, 12px);
+}
+
+.ns-benefits article {
+  min-width: 0;
+  padding: clamp(10px, 1.4vh, 14px) clamp(12px, 1.2vw, 16px);
+  border: 1px solid rgba(107, 180, 67, .5);
+  border-radius: 12px;
+  background: rgba(7, 12, 9, .62);
+  box-shadow: 0 0 20px rgba(107, 180, 67, .08);
+  backdrop-filter: blur(14px);
+  transition: transform .3s cubic-bezier(.16, 1, .3, 1), box-shadow .3s ease, border-color .3s ease;
+  animation: ns-card-in .55s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.ns-benefits article:hover {
+  transform: translateY(-4px);
+  border-color: rgba(134, 209, 92, .85);
+  box-shadow: 0 12px 30px rgba(107, 180, 67, .2);
+}
+
+.ns-benefits article:nth-child(1) { animation-delay: .3s; }
+.ns-benefits article:nth-child(2) { animation-delay: .38s; }
+.ns-benefits article:nth-child(3) { animation-delay: .46s; }
+.ns-benefits article:nth-child(4) { animation-delay: .54s; }
+
+.ns-benefits svg {
+  width: 22px;
+  height: 22px;
+  color: #ef5a36;
+}
+
+.ns-benefits h3 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(12px, 1.4vh, 14px);
+  font-weight: 800;
+}
+
+.ns-benefits p {
+  margin: 3px 0 0;
+  color: #9aa2a4;
+  font-size: clamp(10.5px, 1.2vh, 12px);
+  line-height: 1.35;
+}
+
+@keyframes ns-panel-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ns-card-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ns-hero,
+  .ns-solution,
+  .ns-benefits article { animation: none; }
+
+  .ns-benefits article:hover { transform: none; }
+}
+
+@media (max-height: 760px) {
+  .ns-lead { display: none; }
+  .ns-benefits p { display: none; }
+}
+
+@media (max-width: 1100px) {
+  .ns-benefits { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  html:has(.page-need-support) { overflow: auto; height: auto; }
+
+  .page-need-support {
+    height: auto;
+    max-height: none;
+    overflow: auto;
+  }
+
+  .page-need-support h1 {
+    white-space: normal;
+    font-size: 28px;
+  }
+
+  .ns-main { grid-template-rows: auto auto auto; }
+  .ns-solutions { grid-template-columns: 1fr; }
+  .ns-photos { grid-template-columns: 1fr 1fr; }
+  .ns-benefits { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .ns-benefits { grid-template-columns: 1fr; }
+}
