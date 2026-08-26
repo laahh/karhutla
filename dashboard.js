@@ -23,9 +23,18 @@
 
   document.querySelectorAll(".dash-stat strong[data-count]").forEach(countUp);
 
-  const TREND_LABELS = ["10-Aug", "11-Aug", "13-Aug", "14-Aug", "15-Aug", "18-Aug", "17-Aug", "18-Aug", "19-Aug", "21-Aug", "22-Aug", "23-Aug", "24-Aug"];
-  const TREND_INTERNAL = [1, 1, 2, 1, 6, 2, 1, 2, 1, 4, 1, 4, 1];
-  const TREND_EXTERNAL = [0, 0, 3, 3, 1, 0, 0, 2, 2, 3, 4, 0, 1];
+  const DEFAULT_TREND_LABELS = ["10-Aug", "11-Aug", "13-Aug", "14-Aug", "15-Aug", "18-Aug", "17-Aug", "18-Aug", "19-Aug", "21-Aug", "22-Aug", "23-Aug", "24-Aug"];
+  const DEFAULT_TREND_INTERNAL = [1, 1, 2, 1, 6, 2, 1, 2, 1, 4, 1, 4, 1];
+  const DEFAULT_TREND_EXTERNAL = [0, 0, 3, 3, 1, 0, 0, 2, 2, 3, 4, 0, 1];
+
+  let TREND_LABELS = DEFAULT_TREND_LABELS;
+  let TREND_INTERNAL = DEFAULT_TREND_INTERNAL;
+  let TREND_EXTERNAL = DEFAULT_TREND_EXTERNAL;
+  // Optional real "Hotspot Aktif" counts (e.g. live SiPongi data), plotted
+  // against their own right-axis scale instead of the internal/external
+  // bars' 0-7 scale. Set via window.setTrendData(); null keeps the original
+  // behavior of just plotting the internal+external stack height.
+  let TREND_ACTIVE = null;
 
   function renderTrend() {
     const holder = document.getElementById("trend-chart");
@@ -44,10 +53,14 @@
     const plotH = H - MT - MB;
     const n = TREND_LABELS.length;
     const yMax = 7;
+    const activeMax = TREND_ACTIVE
+      ? Math.max(100, Math.ceil(Math.max.apply(null, TREND_ACTIVE) / 100) * 100)
+      : 700;
     const groupW = plotW / n;
     const barW = groupW * 0.5;
 
     const yPix = function (v) { return MT + plotH - (v / yMax) * plotH; };
+    const yPixActive = function (v) { return MT + plotH - (v / activeMax) * plotH; };
 
     let gridLines = "";
     let leftTicks = "";
@@ -56,7 +69,7 @@
       const y = yPix(i);
       gridLines += '<line class="grid-line" x1="' + ML + '" x2="' + (ML + plotW) + '" y1="' + y + '" y2="' + y + '"/>';
       leftTicks += '<text class="axis-tick" x="' + (ML - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + i.toFixed(1).replace(".", ",") + '</text>';
-      rightTicks += '<text class="axis-tick" x="' + (ML + plotW + 8) + '" y="' + (y + 3) + '" text-anchor="start">' + (i * 100) + '</text>';
+      rightTicks += '<text class="axis-tick" x="' + (ML + plotW + 8) + '" y="' + (y + 3) + '" text-anchor="start">' + Math.round(i * activeMax / 7) + '</text>';
     }
 
     let bars = "", xLabels = "", linePoints = [], lineValues = "";
@@ -87,10 +100,11 @@
 
       xLabels += '<text class="x-label" x="' + (gx + groupW / 2) + '" y="' + (H - 6) + '">' + TREND_LABELS[i] + '</text>';
 
+      const lineVal = TREND_ACTIVE ? TREND_ACTIVE[i] : total;
       const lx = gx + groupW / 2;
-      const ly = yPix(total);
+      const ly = TREND_ACTIVE ? yPixActive(lineVal) : yPix(lineVal);
       linePoints.push(lx + "," + ly);
-      lineValues += '<text class="line-value" style="animation-delay:' + (650 + i * 25) + 'ms" x="' + lx + '" y="' + (ly - 10) + '">' + total + '</text>';
+      lineValues += '<text class="line-value" style="animation-delay:' + (650 + i * 25) + 'ms" x="' + lx + '" y="' + (ly - 10) + '">' + lineVal + '</text>';
     }
 
     let lineDots = "";
@@ -157,4 +171,15 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(renderTrend, 150);
   });
+
+  // Lets other scripts (e.g. live SiPongi wiring on testing.html) swap in
+  // real data and re-render, without index.html's default demo data ever
+  // being touched unless this is actually called.
+  window.setTrendData = function (labels, internalArr, externalArr, activeArr) {
+    TREND_LABELS = labels;
+    TREND_INTERNAL = internalArr;
+    TREND_EXTERNAL = externalArr;
+    TREND_ACTIVE = activeArr || null;
+    renderTrend();
+  };
 })();
