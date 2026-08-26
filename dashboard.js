@@ -31,7 +31,14 @@
     const holder = document.getElementById("trend-chart");
     if (!holder) return;
 
-    const W = 640, H = 250;
+    const rect = holder.getBoundingClientRect();
+    const containerW = rect.width || 640;
+    const containerH = rect.height || 250;
+    // W stays fixed so each bar/label keeps the same internal spacing regardless
+    // of container width; H is derived to match the container's aspect ratio so
+    // the chart fills the panel's height instead of leaving it letterboxed.
+    const W = 640;
+    const H = Math.max(160, Math.round(W * (containerH / containerW)));
     const ML = 30, MR = 34, MT = 10, MB = 26;
     const plotW = W - ML - MR;
     const plotH = H - MT - MB;

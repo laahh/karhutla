@@ -9375,6 +9375,290 @@
           "value": ":"
         }
       ]
+    },
+    {
+      "sheet_name": "25 Agustus 2026",
+      "operasi_karhutla": {
+        "tanggal": "2026-08-25T00:00:00",
+        "mulai_operasi": "15:29 WITA",
+        "selesai_operasi": "17:30 WITA",
+        "lokasi_pemadaman": "Area Revegetasi BC",
+        "titik_koordinat_pemadaman": "2'07'12.9\"N 117'34'25.6\"E",
+        "jumlah_tim": {
+          "berau_coal": "8 Personil ERG & IC",
+          "volunteer": "",
+          "unit_support": "LV.8 RC.8 FT.8 AM.8",
+          "peralatan_yang_digunakan": "Hose 2,5 (2) Hose 1,5 (1) Wys (1) Nozel (1)",
+          "konsumsi": "Logistik ERG, MK & Air mineral dari PAMA"
+        },
+        "jumlah_titik_api_yang_dipadamkan": "4 Titik"
+      },
+      "evaluasi": {
+        "kelebihan": {
+          "jumlah_tim": null,
+          "unit_support": "2 unit WT dari pama",
+          "peralatan": "Hose 2,5 (2) Hose 1,5 (1) Wys (1) Nozel (1)",
+          "konsumsi": "Logistik ERG, MK & Air mineral dari PAMA"
+        },
+        "kekurangan": {
+          "jumlah_tim": null,
+          "unit_support": "Fire Truck belum ada",
+          "peralatan_yang_digunakan": null,
+          "konsumsi": null
+        }
+      },
+      "rencana_kegiatan_besok": null,
+      "dokumentasi": {
+        "jumlah_gambar_tertanam": 3,
+        "catatan": "Gambar tertanam tidak dienkode ke dalam JSON."
+      },
+      "raw_nonempty_cells": [
+        {
+          "cell": "A1",
+          "value": "Operasi KARHUTLA"
+        },
+        {
+          "cell": "D1",
+          "value": "Dokumentasi"
+        },
+        {
+          "cell": "A2",
+          "value": "Tanggal"
+        },
+        {
+          "cell": "B2",
+          "value": ":"
+        },
+        {
+          "cell": "C2",
+          "value": "2026-08-24T00:00:00"
+        },
+        {
+          "cell": "A3",
+          "value": "Mulai Operasi Jam berapa "
+        },
+        {
+          "cell": "B3",
+          "value": ":"
+        },
+        {
+          "cell": "C3",
+          "value": "16: WITA"
+        },
+        {
+          "cell": "A4",
+          "value": "Selesai Operasi Jam berapa "
+        },
+        {
+          "cell": "B4",
+          "value": ":"
+        },
+        {
+          "cell": "C4",
+          "value": "20:30 WITA"
+        },
+        {
+          "cell": "A5",
+          "value": "Lokasi Pemadaman "
+        },
+        {
+          "cell": "B5",
+          "value": ":"
+        },
+        {
+          "cell": "C5",
+          "value": "Jalan Nyapa, Dekat PIT CD Barat_BLOK 8"
+        },
+        {
+          "cell": "A6",
+          "value": "Titik Kordinat Pemadaman"
+        },
+        {
+          "cell": "B6",
+          "value": ":"
+        },
+        {
+          "cell": "C6",
+          "value": "2'07'12.9\"N 117'34'25.6\"E"
+        },
+        {
+          "cell": "A7",
+          "value": "Jumlah Tim"
+        },
+        {
+          "cell": "A8",
+          "value": "Berau Coal                           "
+        },
+        {
+          "cell": "B8",
+          "value": ":"
+        },
+        {
+          "cell": "C8",
+          "value": "7 Personil ERG & IC"
+        },
+        {
+          "cell": "A9",
+          "value": "Volunteer        "
+        },
+        {
+          "cell": "B9",
+          "value": ":"
+        },
+        {
+          "cell": "C9",
+          "value": "2 Orang security, 2 orang dari BC & 4 orang dari PAMA"
+        },
+        {
+          "cell": "A10",
+          "value": "Unit Support"
+        },
+        {
+          "cell": "B10",
+          "value": ":"
+        },
+        {
+          "cell": "C10",
+          "value": "WT PAMA, Rescue Car & LV Support"
+        },
+        {
+          "cell": "A11",
+          "value": "Peralatan yang digunakan"
+        },
+        {
+          "cell": "B11",
+          "value": ":"
+        },
+        {
+          "cell": "C11",
+          "value": "Hose 2,5 (2) Hose 1,5 (1) Wys (1) Nozel (1)"
+        },
+        {
+          "cell": "A12",
+          "value": "Konsumsi"
+        },
+        {
+          "cell": "B12",
+          "value": ":"
+        },
+        {
+          "cell": "C12",
+          "value": "Logistik ERG, MK & Air mineral dari PAMA"
+        },
+        {
+          "cell": "A13",
+          "value": "Berapa titik api yang dipadamkan"
+        },
+        {
+          "cell": "B13",
+          "value": ":"
+        },
+        {
+          "cell": "C13",
+          "value": "4 Titik"
+        },
+        {
+          "cell": "A14",
+          "value": "Evaluasi"
+        },
+        {
+          "cell": "A15",
+          "value": "Kelebihan "
+        },
+        {
+          "cell": "A16",
+          "value": "Jumlah Tim"
+        },
+        {
+          "cell": "B16",
+          "value": ":"
+        },
+        {
+          "cell": "A17",
+          "value": "Unit Support"
+        },
+        {
+          "cell": "B17",
+          "value": ":"
+        },
+        {
+          "cell": "C17",
+          "value": "2 unit WT dari pama"
+        },
+        {
+          "cell": "A18",
+          "value": "Peralatan"
+        },
+        {
+          "cell": "B18",
+          "value": ":"
+        },
+        {
+          "cell": "C18",
+          "value": "Hose 2,5 (2) Hose 1,5 (1) Wys (1) Nozel (1)"
+        },
+        {
+          "cell": "A19",
+          "value": "Konsumsi"
+        },
+        {
+          "cell": "B19",
+          "value": ":"
+        },
+        {
+          "cell": "C19",
+          "value": "Logistik ERG, MK & Air mineral dari PAMA"
+        },
+        {
+          "cell": "A20",
+          "value": "Kekurangan "
+        },
+        {
+          "cell": "A21",
+          "value": "Jumlah Tim"
+        },
+        {
+          "cell": "B21",
+          "value": ":"
+        },
+        {
+          "cell": "A22",
+          "value": "Unit Support"
+        },
+        {
+          "cell": "B22",
+          "value": ":"
+        },
+        {
+          "cell": "C22",
+          "value": "Fire Truck belum ada"
+        },
+        {
+          "cell": "A23",
+          "value": "Peralatan yang digunakan"
+        },
+        {
+          "cell": "B23",
+          "value": ":"
+        },
+        {
+          "cell": "A24",
+          "value": "Konsumsi "
+        },
+        {
+          "cell": "B24",
+          "value": ":"
+        },
+        {
+          "cell": "A25",
+          "value": "Rencana Kegiatan Besok "
+        },
+        {
+          "cell": "B25",
+          "value": ":"
+        }
+      ]
     }
+    
   ]
 }
