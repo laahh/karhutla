@@ -16,7 +16,7 @@
   if (!openBtn || !modal || !grid) return;
 
   const PHOTOS = [];
-  for (let i = 1; i <= 20; i += 1) {
+  for (let i = 1; i <= 21; i += 1) {
     const file = i === 1 ? "dokumentasi.png" : "dokumentasi" + i + ".png";
     PHOTOS.push({ src: "aktivitas/" + file, caption: "Dokumentasi lapangan " + i });
   }

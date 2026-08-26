@@ -14,7 +14,22 @@
     sedang: { label: "Medium", badge: "Medium" },
     rendah: { label: "Low", badge: "Low" }
   };
-  const DEMO_PHOTOS = ["aktivitas/act-1.jpg", "aktivitas/act-2.jpg", "aktivitas/act-3.jpg", "aktivitas/act-4.jpg"];
+  const FIELD_PHOTOS = (function () {
+    const list = ["aktivitas/dokumentasi.png"];
+    for (let i = 2; i <= 21; i += 1) list.push("aktivitas/dokumentasi" + i + ".png");
+    return list;
+  })();
+
+  function randomFieldPhotos() {
+    const count = Math.random() < 0.5 ? 1 : 2;
+    const pool = FIELD_PHOTOS.slice();
+    const picked = [];
+    for (let i = 0; i < count; i += 1) {
+      const idx = Math.floor(Math.random() * pool.length);
+      picked.push(pool.splice(idx, 1)[0]);
+    }
+    return picked;
+  }
   const MATCH_KM = 3;
   const NEAR_KM = 5;
   const boundsOps = L.latLngBounds([1.87, 117.13], [2.40, 117.63]);
@@ -461,7 +476,7 @@
         keterangan: rec.keterangan,
         eksternal: isEksternal(rec, lat, lng),
         media: {
-          photos: [DEMO_PHOTOS[index % DEMO_PHOTOS.length], DEMO_PHOTOS[(index + 1) % DEMO_PHOTOS.length]],
+          photos: randomFieldPhotos(),
           video: null
         }
       };
@@ -487,7 +502,7 @@
         keterangan: null,
         eksternal: hasCoord(lap) ? !insideIupk(lap.lat, lap.lng) : false,
         media: {
-          photos: [DEMO_PHOTOS[lap.index % DEMO_PHOTOS.length]],
+          photos: randomFieldPhotos(),
           video: null
         }
       }, lap));
@@ -712,7 +727,7 @@
     const gallery = photos.map(function (src) {
       return '<img src="' + esc(src) + '" alt="Dokumentasi operasi ' + esc(item.lokasi) + '">';
     }).join("");
-    const poster = photos[0] || DEMO_PHOTOS[0];
+    const poster = photos[0] || FIELD_PHOTOS[0];
     return (
       '<p class="detail-section">Dokumentasi lapangan</p>' +
       '<div class="media-gallery">' + gallery + "</div>" +
