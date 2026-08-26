@@ -139,6 +139,39 @@
     </div>
   </section>
 
+  <div class="doc-modal" id="doc-modal" hidden>
+    <div class="doc-modal-backdrop" id="doc-modal-backdrop"></div>
+    <div class="doc-modal-panel" role="dialog" aria-modal="true" aria-label="Dokumentasi lapangan">
+      <header class="doc-modal-head">
+        <div>
+          <p class="eyebrow">PENANGANAN KARHUTLA PT BERAU COAL</p>
+          <h2>Dokumentasi Lapangan</h2>
+        </div>
+        <button type="button" id="doc-modal-close" class="doc-close-btn" aria-label="Tutup dokumentasi">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <div class="doc-grid" id="doc-grid"></div>
+    </div>
+  </div>
+
+  <div class="doc-lightbox" id="doc-lightbox" hidden>
+    <div class="doc-lightbox-backdrop" id="doc-lightbox-backdrop"></div>
+    <button type="button" id="doc-lightbox-prev" class="doc-lightbox-nav doc-lightbox-prev" aria-label="Foto sebelumnya">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg>
+    </button>
+    <figure class="doc-lightbox-figure">
+      <img id="doc-lightbox-img" src="" alt="">
+      <figcaption id="doc-lightbox-caption"></figcaption>
+    </figure>
+    <button type="button" id="doc-lightbox-next" class="doc-lightbox-nav doc-lightbox-next" aria-label="Foto berikutnya">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg>
+    </button>
+    <button type="button" id="doc-lightbox-close" class="doc-close-btn doc-lightbox-close" aria-label="Tutup foto">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+
   <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="iupk-boundary.js"></script>
