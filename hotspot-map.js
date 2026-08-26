@@ -733,7 +733,7 @@
       '<div class="media-gallery">' + gallery + "</div>" +
       '<div class="video-slot">' +
         '<img src="' + esc(poster) + '" alt="">' +
-        "<span>Galeri</span>" +
+        "" +
       "</div>"
     );
   }
