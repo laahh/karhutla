@@ -9,9 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="dashboard.css">
 </head>
-<body class="page-home">
+<body>
 <main>
   <section class="hero" id="beranda">
     <img
@@ -61,8 +60,7 @@
       </details>
     </header>
 
-    <div class="hero-body">
-     <div class="hero-main">
+    <div class="hero-main">
       <div class="hero-copy">
         <div class="alert-chip">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 21.5 20H2.5L12 3.2Z"/><path d="M12 10v4.2"/><path d="M12 17.2v.6"/></svg>
@@ -125,134 +123,33 @@
             <p>Area</p>
           </div>
         </article>
+        <!-- <article>
+          <span class="metric-icon green">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg>
+          </span>
+          <div>
+            <small>Respons Terakhir</small>
+            <strong>--</strong>
+            <p>--</p>
+          </div>
+        </article> -->
       </div>
     </div>
-    </div>
+
+    <a class="scroll" href="milestone.html">
+      <span></span>
+      Scroll untuk jelajah
+      <i>⌄</i>
+    </a>
   </section>
 
-  <section class="dash" id="aktual">
-    <div class="dash-head">
-      <h2>Aktual Pengendalian Karhutla</h2>
-      <p>Kesiapan pengendalian sudah optimal dengan 237 item peralatan kondisi baik, 94 personel ER, 25 unit pendukung, serta implementasi patroli 100%.</p>
-    </div>
-
-    <div class="dash-stats">
-      <article class="dash-stat">
-        <div>
-          <strong class="tone-green" data-count="237">0</strong>
-          <p>Item Peralatan Good</p>
-          <span>Fire truck, hose, nozzle, pump</span>
-        </div>
-        <span class="dash-stat-icon tone-orange">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16V9h11v7"/><path d="M14 12h4.2L21 16v3h-2"/><circle cx="7" cy="18.5" r="2"/><circle cx="16.5" cy="18.5" r="2"/></svg>
-        </span>
-      </article>
-      <article class="dash-stat">
-        <div>
-          <strong class="tone-green" data-count="94">0</strong>
-          <p>Personel ER / Hari</p>
-          <span>Komposisi standby aktif harian</span>
-        </div>
-        <span class="dash-stat-icon tone-green">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.4"/><path d="M4 19c.4-3.2 2.8-5 5-5s4.6 1.8 5 5M14.2 14.2c1.6-.4 3.5.6 4.8 3.8"/></svg>
-        </span>
-      </article>
-      <article class="dash-stat">
-        <div>
-          <strong class="tone-orange" data-count="3">0</strong>
-          <p>Fire Volunteer / Hari</p>
-          <span>Target standby mitra kerja</span>
-        </div>
-        <span class="dash-stat-icon tone-orange">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.4"/><path d="M4 19c.4-3.2 2.8-5 5-5s4.6 1.8 5 5"/></svg>
-        </span>
-      </article>
-      <article class="dash-stat">
-        <div>
-          <strong class="tone-orange" data-count="25">0</strong>
-          <p>Unit Pendukung</p>
-          <span>Fire truck, rescue &amp; LV support</span>
-        </div>
-        <span class="dash-stat-icon tone-orange">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16V9h11v7"/><path d="M14 12h4.2L21 16v3h-2"/><circle cx="7" cy="18.5" r="2"/><circle cx="16.5" cy="18.5" r="2"/></svg>
-        </span>
-      </article>
-      <article class="dash-stat">
-        <div>
-          <strong class="tone-green" data-count="100" data-suffix="%">0</strong>
-          <p>Implementasi Patroli</p>
-          <span>178/178 status Aman</span>
-        </div>
-        <span class="dash-stat-icon tone-green">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6.5v6.2c0 5.1-3.4 8.8-8 10.5-4.6-1.7-8-5.4-8-10.5V6.5L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
-        </span>
-      </article>
-    </div>
-
-    <div class="dash-grid">
-      <article class="dash-panel dash-trend">
-        <header>
-          <h3>Trend Hotspot dan Karhutla</h3>
-          <p>Titik Karhutla Aman dan Terkendali</p>
-        </header>
-        <div class="trend-chart" id="trend-chart" role="img" aria-label="Grafik tren hotspot dan karhutla 10-24 Agustus 2026"></div>
-        <ul class="dash-legend">
-          <li><i class="dot dot-line"></i> Hotspot Aktif</li>
-          <li><i class="dot dot-blue"></i> Karhutla Internal</li>
-          <li><i class="dot dot-orange"></i> Karhutla Eksternal</li>
-        </ul>
-      </article>
-
-      <article class="dash-panel dash-donut">
-        <header>
-          <h3>Komposisi Peralatan Good</h3>
-          <p>237 item good condition</p>
-        </header>
-        <div class="donut-wrap" id="donut-chart" role="img" aria-label="Komposisi peralatan kondisi baik"></div>
-        <ul class="dash-legend dash-legend--grid" id="donut-legend"></ul>
-      </article>
-
-      <aside class="dash-status">
-        <header>
-          <h3>Status Hotspot Command Center</h3>
-          <span class="status-radar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg></span>
-        </header>
-        <div class="status-main">
-          <strong>0</strong>
-          <div>
-            <p>Titik Aktif</p>
-            <small>Per 24 Agustus 2026</small>
-          </div>
-        </div>
-        <div class="status-split">
-          <div><small>Internal</small><strong>0</strong></div>
-          <div><small>Eksternal</small><strong>0</strong></div>
-        </div>
-        <p class="status-note">Kondisi saat ini sudah zero titik aktif. Tetap fokus pada patroli pencegahan dan validasi lapangan.</p>
-      </aside>
-
-      <article class="dash-mini">
-        <small>Implementasi Patroli</small>
-        <strong class="tone-green">100%</strong>
-        <div class="mini-bar"><span style="width:100%"></span></div>
-        <p>178/178 status Aman</p>
-      </article>
-
-      <article class="dash-mini">
-        <small>Inspeksi Sekat Bakar</small>
-        <strong>57</strong>
-        <p>Lokasi diinspeksi</p>
-        <div class="mini-chips">
-          <span class="chip chip-green">Aman <b>57</b></span>
-          <span class="chip">Gap <b>0</b></span>
-        </div>
-      </article>
-    </div>
-  </section>
+  <section class="sr-only" id="insiden"><h2>Insiden</h2></section>
+  <section class="sr-only" id="kesiapsiagaan"><h2>Kesiapsiagaan</h2></section>
+  <section class="sr-only" id="prosedur"><h2>Prosedur</h2></section>
+  <section class="sr-only" id="laporan"><h2>Laporan</h2></section>
 </main>
 <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
 <script src="embers.js"></script>
 <script src="page-fire.js"></script>
-<script src="dashboard.js"></script>
 </body>
 </html>
