@@ -43,7 +43,7 @@
         <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </summary>
       <nav>
-            <a href="testing.html">Beranda</a>
+        <a href="testing.html">Beranda</a>
          <a href="tahap.html" >Tahap Pengendalian</a>
         <a href="hotspot.html">Hotspot</a>
          <a href="aktivitas.html">Support Karhutla Berau</a>
@@ -70,19 +70,55 @@
           </span>
           <h2>Thermal Drone</h2>
         </header>
-        <div class="ns-photos ns-photos--single">
-          <video
-                controls
-                autoplay
-                muted
-                loop
-                playsinline
-                poster="need-support/heat-detect.jpg"
-              >
-            <source src="video (2).mp4" type="video/mp4">
-            Browser Anda tidak mendukung pemutaran video.
-          </video>
-        </div>
+        <div
+  class="ns-photos ns-photos--single"
+  style="
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
+    width: 100%;
+  "
+>
+  <video
+    controls
+    autoplay
+    muted
+    loop
+    playsinline
+    poster="need-support/heat-detect.jpg"
+    style="
+      display: block;
+      width: calc(50% - 8px);
+      height: 320px;
+      object-fit: cover;
+      border-radius: 12px;
+    "
+  >
+    <source src="video (2).mp4" type="video/mp4">
+    Browser Anda tidak mendukung pemutaran video.
+  </video>
+
+  <div
+    style="
+      width: calc(50% - 8px);
+      height: 320px;
+      overflow: hidden;
+      border-radius: 12px;
+    "
+  >
+    <img
+      src="aktivitas/termal.png"
+      alt="Hasil pemantauan kamera termal"
+      style="
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      "
+    >
+  </div>
+</div>
+       
       </section>
 
       <section class="ns-solution">
@@ -104,6 +140,7 @@
               <source src="video (1).mp4" type="video/mp4">
               Browser Anda tidak mendukung pemutaran video.
           </video>
+          
         </div>
       </section>
     </div>

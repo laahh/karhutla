@@ -36,21 +36,21 @@
       return cases.filter(function (c) { return c.tanggal === key && c.eksternal; }).length;
     });
 
-    const features = await KD.fetchSipongi(FROM, TO);
-    if (!features) {
-      // No live SiPongi data available — still show real case counts for the bars.
+    // Query SiPongi once per day (same single-day from=to=day request
+    // hotspot.html issues when you pick that date), run in parallel, so the
+    // count for each day is guaranteed identical to what hotspot.html shows
+    // for that same day — not a range query bucketed on our own.
+    const perDay = await Promise.all(dateKeys.map(function (key) {
+      return KD.fetchSipongi(key, key);
+    }));
+
+    if (perDay.every(function (features) { return features == null; })) {
+      // No live SiPongi data available at all — still show real case counts for the bars.
       window.setTrendData(labels, internal, eksternal, null);
       return;
     }
 
-    const countByDay = {};
-    features.forEach(function (f) {
-      const p = f.properties || {};
-      const key = KD.dayKey(p.date_hotspot_ori || p.date_hotspot);
-      if (!key) return;
-      countByDay[key] = (countByDay[key] || 0) + 1;
-    });
-    const active = dateKeys.map(function (key) { return countByDay[key] || 0; });
+    const active = perDay.map(function (features) { return features ? features.length : 0; });
 
     window.setTrendData(labels, internal, eksternal, active);
   }
