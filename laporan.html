@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Form input laporan operasi KARHUTLA PT Berau Coal.">
+  <title>Laporan Operasi • KARHUTLA Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="laporan.css">
+</head>
+<body class="page-laporan">
+  <canvas class="embers" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Berau Coal HSE Beranda">
+      <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
+    </a>
+    <nav class="desktop-nav" aria-label="Navigasi utama">
+      <a href="testing.html">Beranda</a>
+      <a href="tahap.html">Tahap Pengendalian</a>
+      <a href="hotspot.html">Hotspot</a>
+      <a class="active" href="javascript:void(0)" aria-current="page">Laporan</a>
+      <a href="aktivitas.html">Support Karhutla Berau</a>
+      <a href="need-support.html">Need Support</a>
+      <a href="milestone.html">Milestone</a>
+      <a href="fokus.html">Fokus Area</a>
+      <a href="kesiapan.html">Kesiapan Tim</a>
+    </nav>
+    <details class="mobile-menu">
+      <summary aria-label="Buka menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </summary>
+      <nav>
+        <a href="testing.html">Beranda</a>
+        <a href="tahap.html">Tahap Pengendalian</a>
+        <a href="hotspot.html">Hotspot</a>
+        <a class="active" href="javascript:void(0)" aria-current="page">Laporan</a>
+        <a href="aktivitas.html">Support Karhutla Berau</a>
+        <a href="need-support.html">Need Support</a>
+        <a href="milestone.html">Milestone</a>
+        <a href="fokus.html">Fokus Area</a>
+        <a href="kesiapan.html">Kesiapan Tim</a>
+      </nav>
+    </details>
+  </header>
+
+  <main class="lp-main">
+    <div class="lp-hero">
+      <div>
+        <p class="eyebrow">PENANGANAN KARHUTLA PT BERAU COAL</p>
+        <h1>Input Laporan Operasi</h1>
+        <p class="lp-lead">Isi laporan pemadaman sesuai format data yang dipakai peta hotspot. Setelah disimpan, data langsung tertulis ke <code>laporan-data.js</code>.</p>
+      </div>
+      <div class="lp-hero-meta">
+        <span class="lp-count" id="lp-count">0 laporan</span>
+        <button type="button" class="lp-btn-new" id="lp-new">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Laporan baru
+        </button>
+      </div>
+    </div>
+
+    <div class="lp-layout">
+      <aside class="lp-list-card" aria-label="Daftar laporan tersimpan">
+        <label class="lp-search">
+          <span class="sr-only">Cari laporan</span>
+          <input type="search" id="lp-search" placeholder="Cari tanggal, lokasi, atau sheet…">
+        </label>
+        <div class="lp-list" id="lp-list" role="list"></div>
+      </aside>
+
+      <section class="lp-form-card">
+        <form id="lp-form" novalidate>
+          <input type="hidden" name="index" id="f-index" value="">
+
+          <div class="lp-form-head">
+            <h2 id="lp-form-title">Laporan baru</h2>
+            <p id="lp-form-hint">Lengkapi data operasi. Kolom bertanda * wajib diisi.</p>
+          </div>
+
+          <fieldset>
+            <legend>Operasi Karhutla</legend>
+            <div class="lp-grid lp-grid-3">
+              <label>
+                <span>Nama sheet</span>
+                <input type="text" name="sheet_name" id="f-sheet" placeholder="otomatis dari tanggal">
+              </label>
+              <label>
+                <span>Tanggal *</span>
+                <input type="date" name="tanggal" id="f-tanggal" required>
+              </label>
+              <label>
+                <span>Jumlah titik api dipadamkan</span>
+                <input type="text" name="jumlah_titik_api" id="f-titik-api" placeholder="contoh: 2 Titik Api">
+              </label>
+            </div>
+            <div class="lp-grid lp-grid-2">
+              <label>
+                <span>Mulai operasi</span>
+                <input type="time" name="mulai_operasi" id="f-mulai">
+              </label>
+              <label>
+                <span>Selesai operasi</span>
+                <input type="time" name="selesai_operasi" id="f-selesai">
+              </label>
+            </div>
+            <div class="lp-grid lp-grid-2">
+              <label>
+                <span>Lokasi pemadaman *</span>
+                <input type="text" name="lokasi_pemadaman" id="f-lokasi" required placeholder="contoh: Area Revegetasi_GMO">
+              </label>
+              <label>
+                <span>Titik koordinat</span>
+                <input type="text" name="titik_koordinat" id="f-koordinat" placeholder="2.162913°N  117.615015°E">
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Jumlah tim</legend>
+            <div class="lp-grid lp-grid-2">
+              <label>
+                <span>Berau Coal</span>
+                <input type="text" name="tim_berau_coal" id="f-tim-bc" placeholder="contoh: 5 Personil ERG &amp; Incident Commander">
+              </label>
+              <label>
+                <span>Volunteer</span>
+                <input type="text" name="tim_volunteer" id="f-tim-vol" placeholder="contoh: Enviro : 4 Orang">
+              </label>
+              <label>
+                <span>Unit support</span>
+                <input type="text" name="tim_unit" id="f-tim-unit" placeholder="contoh: 1 Unit WT PAMA, Fire Truck &amp; LV Support">
+              </label>
+              <label>
+                <span>Peralatan yang digunakan</span>
+                <input type="text" name="tim_alat" id="f-tim-alat" placeholder="contoh: Hose 1.5, Hose 2.5, Nozzle">
+              </label>
+              <label class="lp-span-2">
+                <span>Konsumsi</span>
+                <input type="text" name="tim_konsumsi" id="f-tim-konsumsi" placeholder="contoh: Logistik ERG, MK &amp; Air mineral">
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="lp-eval">
+            <fieldset>
+              <legend>Evaluasi — kelebihan</legend>
+              <label>
+                <span>Jumlah tim</span>
+                <input type="text" name="plus_tim" id="f-plus-tim">
+              </label>
+              <label>
+                <span>Unit support</span>
+                <input type="text" name="plus_unit" id="f-plus-unit">
+              </label>
+              <label>
+                <span>Peralatan</span>
+                <input type="text" name="plus_alat" id="f-plus-alat">
+              </label>
+              <label>
+                <span>Konsumsi</span>
+                <input type="text" name="plus_konsumsi" id="f-plus-konsumsi">
+              </label>
+            </fieldset>
+            <fieldset>
+              <legend>Evaluasi — kekurangan</legend>
+              <label>
+                <span>Jumlah tim</span>
+                <input type="text" name="minus_tim" id="f-minus-tim">
+              </label>
+              <label>
+                <span>Unit support</span>
+                <input type="text" name="minus_unit" id="f-minus-unit">
+              </label>
+              <label>
+                <span>Peralatan</span>
+                <input type="text" name="minus_alat" id="f-minus-alat">
+              </label>
+              <label>
+                <span>Konsumsi</span>
+                <input type="text" name="minus_konsumsi" id="f-minus-konsumsi">
+              </label>
+            </fieldset>
+          </div>
+
+          <fieldset>
+            <legend>Rencana &amp; dokumentasi</legend>
+            <label>
+              <span>Rencana kegiatan besok</span>
+              <textarea name="rencana" id="f-rencana" rows="3" placeholder="Kosongkan jika tidak ada"></textarea>
+            </label>
+            <div class="lp-grid lp-grid-2">
+              <label>
+                <span>Jumlah gambar tertanam</span>
+                <input type="number" name="jumlah_gambar" id="f-gambar" min="0" step="1" value="0">
+              </label>
+              <label>
+                <span>Catatan dokumentasi</span>
+                <input type="text" name="catatan_dok" id="f-catatan" value="Gambar tertanam tidak dienkode ke dalam JSON.">
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="lp-actions">
+            <p class="lp-status" id="lp-status" role="status"></p>
+            <div class="lp-actions-btns">
+              <button type="button" class="lp-btn-ghost" id="lp-reset">Batal</button>
+              <button type="submit" class="lp-btn-save" id="lp-save">Simpan ke laporan-data.js</button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
+  <script src="laporan-data.js"></script>
+  <script src="laporan.js"></script>
+  <script src="embers.js"></script>
+  <script src="page-fire.js"></script>
+</body>
+</html>
