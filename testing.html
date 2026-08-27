@@ -89,13 +89,36 @@
         </div>
       </div>
 
-      <aside class="live-card">
-        <span class="pulse"></span>
-        <div>
-          <small>STATUS TERKINI</small>
-          <p>Pemantauan aktif 24/7</p>
+      <aside class="live-card live-card--aqi" id="aqi-card" data-level="unknown">
+        <div class="aqi-head">
+          <span class="pulse" aria-hidden="true"></span>
+          <div class="aqi-head-text">
+            <small>INDEKS KUALITAS UDARA</small>
+            <label class="aqi-loc">
+              <span class="sr-only">Pilih lokasi</span>
+              <select id="aqi-location" aria-label="Pilih lokasi kualitas udara"></select>
+            </label>
+          </div>
         </div>
-        <div class="radar" aria-hidden="true"><span></span></div>
+        <div class="aqi-body" aria-live="polite">
+          <div class="aqi-score">
+            <strong id="aqi-value">–</strong>
+            <span id="aqi-unit">US AQI</span>
+          </div>
+          <div class="aqi-meta">
+            <p id="aqi-category">Memuat data…</p>
+            <small id="aqi-detail">PM2.5 —</small>
+          </div>
+        </div>
+        <div class="aqi-scale" aria-hidden="true">
+          <span data-band="good"></span>
+          <span data-band="moderate"></span>
+          <span data-band="sensitive"></span>
+          <span data-band="unhealthy"></span>
+          <span data-band="very"></span>
+          <span data-band="hazard"></span>
+        </div>
+        <p class="aqi-updated" id="aqi-updated">Menghubungkan ke Open-Meteo…</p>
       </aside>
     </div>
 
@@ -241,5 +264,6 @@
 <script src="karhutla-data-utils.js"></script>
 <script src="hotspot-status-live.js"></script>
 <script src="trend-hotspot-live.js"></script>
+<script src="aqi-live.js"></script>
 </body>
 </html>
