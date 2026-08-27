@@ -125,6 +125,7 @@ html:has(.page-laporan) {
 
 .lp-search input,
 .lp-form-card input,
+.lp-form-card select,
 .lp-form-card textarea {
   width: 100%;
   padding: 9px 11px;
@@ -138,6 +139,7 @@ html:has(.page-laporan) {
 
 .lp-search input:focus,
 .lp-form-card input:focus,
+.lp-form-card select:focus,
 .lp-form-card textarea:focus {
   outline: none;
   border-color: rgba(134, 209, 92, .75);
@@ -146,8 +148,14 @@ html:has(.page-laporan) {
 
 .lp-form-card input[type="date"],
 .lp-form-card input[type="time"],
-.lp-form-card input[type="number"] {
+.lp-form-card input[type="number"],
+.lp-form-card select {
   color-scheme: dark;
+}
+
+.lp-form-card select option {
+  background: #101416;
+  color: #f4f5f5;
 }
 
 .lp-list {

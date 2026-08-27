@@ -1,15 +1,17 @@
 (function () {
   const card = document.getElementById("aqi-card");
   const selectEl = document.getElementById("aqi-location");
-  const valueEl = document.getElementById("aqi-value");
-  const categoryEl = document.getElementById("aqi-category");
-  const detailEl = document.getElementById("aqi-detail");
-  const updatedEl = document.getElementById("aqi-updated");
-  if (!card || !selectEl) return;
+  const stationSelect = document.getElementById("aqi-station");
+  const sourceEl = document.getElementById("aqi-source");
+  const tabs = card ? card.querySelectorAll(".aqi-tabs [data-slide]") : [];
+  if (!card || !selectEl || !stationSelect) return;
 
-  const STORAGE_KEY = "karhutla-aqi-location";
+  const STORAGE_LOC = "karhutla-aqi-location";
+  const STORAGE_STATION = "karhutla-aqi-station";
+  const STORAGE_SLIDE = "karhutla-aqi-slide";
   const REFRESH_MS = 10 * 60 * 1000;
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const KALTIM = ["Kalimantan Timur", "Kalimantan Utara", "Kalimantan Tengah", "Kalimantan Barat", "Kalimantan Selatan"];
 
   const GROUPS = [
     {
@@ -66,11 +68,13 @@
 
   let abortCtrl = null;
   let timer = null;
+  let stations = [];
+  let slide = 0;
+  let lastMeteoLevel = "unknown";
+  let lastStationLevel = "unknown";
 
   function levelFromAqi(aqi) {
-    if (aqi == null || Number.isNaN(Number(aqi))) {
-      return { key: "unknown", label: "Tidak tersedia" };
-    }
+    if (aqi == null || Number.isNaN(Number(aqi))) return { key: "unknown", label: "Tidak tersedia" };
     const n = Number(aqi);
     if (n <= 50) return { key: "good", label: "Baik" };
     if (n <= 100) return { key: "moderate", label: "Sedang" };
@@ -80,9 +84,35 @@
     return { key: "hazard", label: "Berbahaya" };
   }
 
+  function levelFromCategory(label, ispu) {
+    const t = String(label || "").toLowerCase();
+    if (t.indexOf("bahaya") !== -1 && t.indexOf("sangat") === -1) {
+      return { key: "hazard", label: label };
+    }
+    if (t.indexOf("sangat") !== -1) return { key: "very", label: label };
+    if (t.indexOf("tidak sehat") !== -1) return { key: "unhealthy", label: label };
+    if (t.indexOf("sedang") !== -1) return { key: "moderate", label: label };
+    if (t.indexOf("baik") !== -1) return { key: "good", label: label };
+    return levelFromIspu(ispu, label);
+  }
+
+  function levelFromIspu(ispu, fallbackLabel) {
+    if (ispu == null || Number.isNaN(Number(ispu))) {
+      return { key: "unknown", label: fallbackLabel || "Tidak tersedia" };
+    }
+    const n = Number(ispu);
+    let key = "hazard";
+    let label = "Berbahaya";
+    if (n <= 50) { key = "good"; label = "Baik"; }
+    else if (n <= 100) { key = "moderate"; label = "Sedang"; }
+    else if (n <= 200) { key = "unhealthy"; label = "Tidak sehat"; }
+    else if (n <= 300) { key = "very"; label = "Sangat tidak sehat"; }
+    return { key: key, label: fallbackLabel || label };
+  }
+
   function formatStamp(iso, tzAbbr) {
     if (!iso) return "Waktu tidak tersedia";
-    const parts = iso.split("T");
+    const parts = String(iso).split("T");
     const date = parts[0] || "";
     const time = (parts[1] || "").slice(0, 5);
     const bits = date.split("-");
@@ -94,6 +124,17 @@
     else if (tzAbbr === "GMT+9" || tzAbbr === "WIT") zone = "WIT";
     else if (tzAbbr && tzAbbr !== "GMT+8" && tzAbbr !== "WITA") zone = tzAbbr;
     return "Diperbarui " + day + " " + month + " " + time + " " + zone;
+  }
+
+  function formatStationTime(raw) {
+    if (!raw) return "";
+    const text = String(raw).trim();
+    const m = text.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    if (m) {
+      return "Diperbarui " + Number(m[3]) + " " + MONTHS[Number(m[2]) - 1] + " " + m[4] + ":" + m[5] + " WIB";
+    }
+    if (/^\d{2}:\d{2}$/.test(text)) return "Diperbarui " + text + " WIB";
+    return "Diperbarui " + text;
   }
 
   function fillSelect(selectedId) {
@@ -117,19 +158,173 @@
     return ALL.find(function (item) { return item.id === id; }) || ALL[0];
   }
 
+  function provinceRank(name) {
+    const i = KALTIM.indexOf(name);
+    return i === -1 ? 100 : i;
+  }
+
+  function stationGroupLabel(st) {
+    if (st.province && KALTIM.indexOf(st.province) !== -1) return st.agency + " · " + st.province;
+    if (st.province) return st.agency + " · " + st.province;
+    return st.agency + " · Stasiun";
+  }
+
+  function fillStationSelect(selectedId) {
+    stationSelect.innerHTML = "";
+    if (!stations.length) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Stasiun belum termuat";
+      stationSelect.appendChild(opt);
+      return;
+    }
+    const sorted = stations.slice().sort(function (a, b) {
+      const ra = provinceRank(a.province || "");
+      const rb = provinceRank(b.province || "");
+      if (ra !== rb) return ra - rb;
+      if (a.agency !== b.agency) return a.agency === "BMKG" ? -1 : 1;
+      return String(a.name).localeCompare(String(b.name), "id");
+    });
+    const groups = {};
+    const order = [];
+    sorted.forEach(function (st) {
+      const label = stationGroupLabel(st);
+      if (!groups[label]) {
+        groups[label] = [];
+        order.push(label);
+      }
+      groups[label].push(st);
+    });
+    order.forEach(function (label) {
+      const optgroup = document.createElement("optgroup");
+      optgroup.label = label;
+      groups[label].forEach(function (st) {
+        const opt = document.createElement("option");
+        opt.value = st.id;
+        const city = st.city && st.city !== st.name ? " · " + st.city : "";
+        opt.textContent = st.name + city;
+        optgroup.appendChild(opt);
+      });
+      stationSelect.appendChild(optgroup);
+    });
+    const valid = stations.some(function (st) { return st.id === selectedId; });
+    const fallback = stations.find(function (st) { return st.id === "klhk:SAMARINDA"; })
+      || stations.find(function (st) { return /samarinda/i.test(st.name + st.city); })
+      || stations[0];
+    stationSelect.value = valid ? selectedId : (fallback ? fallback.id : "");
+  }
+
+  function findStation(id) {
+    return stations.find(function (st) { return st.id === id; }) || stations[0] || null;
+  }
+
+  function applyCardLevel() {
+    const level = slide === 1 ? lastStationLevel : lastMeteoLevel;
+    card.dataset.level = level;
+    card.dataset.scale = slide === 1 ? "ispu" : "us";
+    if (sourceEl) {
+      sourceEl.textContent = slide === 1 ? "Stasiun BMKG / KLHK" : "Open-Meteo · model";
+    }
+  }
+
+  function setSlide(next) {
+    slide = next ? 1 : 0;
+    card.dataset.slide = String(slide);
+    tabs.forEach(function (btn) {
+      const on = Number(btn.getAttribute("data-slide")) === slide;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    applyCardLevel();
+    try { localStorage.setItem(STORAGE_SLIDE, String(slide)); } catch (e) { /* ignore */ }
+  }
+
   function setLoading(on) {
     card.classList.toggle("is-loading", on);
   }
 
-  function renderError(message) {
-    card.dataset.level = "unknown";
-    valueEl.textContent = "–";
-    categoryEl.textContent = "Data belum termuat";
-    detailEl.textContent = "PM2.5 —";
-    updatedEl.textContent = message;
+  function renderMeteoError(message) {
+    lastMeteoLevel = "unknown";
+    document.getElementById("aqi-value").textContent = "–";
+    document.getElementById("aqi-category").textContent = "Data belum termuat";
+    document.getElementById("aqi-detail").textContent = "PM2.5 —";
+    document.getElementById("aqi-updated").textContent = message;
+    applyCardLevel();
   }
 
-  async function load(id) {
+  function renderStationError(message) {
+    lastStationLevel = "unknown";
+    document.getElementById("aqi-st-value").textContent = "–";
+    document.getElementById("aqi-st-category").textContent = "Stasiun belum termuat";
+    document.getElementById("aqi-st-detail").textContent = "PM2.5 —";
+    document.getElementById("aqi-st-updated").textContent = message;
+    applyCardLevel();
+  }
+
+  function normalizeKlhkRows(rows) {
+    return (rows || []).map(function (row) {
+      if (!row || !row.id_stasiun) return null;
+      const cat = row.cat || (row.kategori && row.kategori.nilai) || "";
+      return {
+        id: "klhk:" + row.id_stasiun,
+        agency: "KLHK",
+        name: row.nama || row.id_stasiun,
+        city: row.kota || "",
+        province: row.provinsi || "",
+        pm25: row.a_pm25 == null || row.a_pm25 === "" ? null : Number(row.a_pm25),
+        pm10: row.a_pm10 == null || row.a_pm10 === "" ? null : Number(row.a_pm10),
+        ispu: row.val == null || row.val === "" ? (row.t_pm25 == null ? null : Number(row.t_pm25)) : Number(row.val),
+        category: cat ? String(cat).replace(/\w+/g, function (w) {
+          return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+        }) : "",
+        time: row.waktu || ""
+      };
+    }).filter(Boolean);
+  }
+
+  async function fetchStations() {
+    try {
+      const res = await fetch("aqi-station.php", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.ok && data.stations && data.stations.length) {
+          return data.stations;
+        }
+      }
+    } catch (e) { /* fall through to KLHK direct */ }
+
+    const res = await fetch("https://ispu.kemenlh.go.id/apimobile/v1/getStations");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    return normalizeKlhkRows(data.rows);
+  }
+
+  function renderStation(st) {
+    if (!st) {
+      renderStationError("Tidak ada stasiun terdekat. Berau belum punya alat ukur.");
+      return;
+    }
+    const level = levelFromCategory(st.category, st.ispu);
+    lastStationLevel = level.key;
+    const ispu = st.ispu == null || Number.isNaN(Number(st.ispu)) ? "–" : String(Math.round(Number(st.ispu)));
+    document.getElementById("aqi-st-value").textContent = ispu;
+    document.getElementById("aqi-st-category").textContent = level.label;
+    const parts = [];
+    if (st.pm25 != null && !Number.isNaN(Number(st.pm25))) {
+      parts.push("PM2.5 " + Number(st.pm25).toFixed(1) + " µg/m³");
+    }
+    if (st.pm10 != null && !Number.isNaN(Number(st.pm10))) {
+      parts.push("PM10 " + Number(st.pm10).toFixed(1));
+    }
+    document.getElementById("aqi-st-detail").textContent = parts.length ? parts.join(" · ") : "PM2.5 —";
+    const where = st.agency + " · " + (st.city || st.name);
+    document.getElementById("aqi-st-updated").textContent = (formatStationTime(st.time) || "Data stasiun")
+      + " · " + where
+      + " (bukan Berau)";
+    applyCardLevel();
+  }
+
+  async function loadMeteo(id) {
     const loc = findLocation(id);
     if (abortCtrl) abortCtrl.abort();
     abortCtrl = new AbortController();
@@ -148,45 +343,96 @@
       const current = data.current || {};
       const aqi = current.us_aqi;
       const level = levelFromAqi(aqi);
-      const pm25 = current.pm2_5;
-      const pm10 = current.pm10;
-
-      card.dataset.level = level.key;
-      valueEl.textContent = aqi == null ? "–" : String(Math.round(Number(aqi)));
-      categoryEl.textContent = level.label;
-
+      lastMeteoLevel = level.key;
+      document.getElementById("aqi-value").textContent = aqi == null ? "–" : String(Math.round(Number(aqi)));
+      document.getElementById("aqi-category").textContent = level.label;
       const parts = [];
-      if (pm25 != null) parts.push("PM2.5 " + Number(pm25).toFixed(1) + " µg/m³");
-      if (pm10 != null) parts.push("PM10 " + Number(pm10).toFixed(1));
-      detailEl.textContent = parts.length ? parts.join(" · ") : "PM2.5 —";
-      updatedEl.textContent = formatStamp(current.time, data.timezone_abbreviation);
+      if (current.pm2_5 != null) parts.push("PM2.5 " + Number(current.pm2_5).toFixed(1) + " µg/m³");
+      if (current.pm10 != null) parts.push("PM10 " + Number(current.pm10).toFixed(1));
+      document.getElementById("aqi-detail").textContent = parts.length ? parts.join(" · ") : "PM2.5 —";
+      document.getElementById("aqi-updated").textContent = formatStamp(current.time, data.timezone_abbreviation);
+      applyCardLevel();
     } catch (err) {
       if (err && err.name === "AbortError") return;
-      renderError("Gagal memuat data. Coba pilih lokasi lain.");
+      renderMeteoError("Gagal memuat data model. Coba pilih lokasi lain.");
     } finally {
       setLoading(false);
     }
   }
 
-  function persistAndLoad() {
-    const id = selectEl.value;
-    try { localStorage.setItem(STORAGE_KEY, id); } catch (e) { /* ignore */ }
-    load(id);
+  async function loadStations(keepId) {
+    try {
+      stations = await fetchStations();
+      fillStationSelect(keepId);
+      renderStation(findStation(stationSelect.value));
+    } catch (err) {
+      renderStationError("Gagal memuat stasiun BMKG / KLHK.");
+    }
   }
 
-  let saved = "tanjung-redeb";
-  try { saved = localStorage.getItem(STORAGE_KEY) || saved; } catch (e) { /* ignore */ }
+  function persistMeteo() {
+    const id = selectEl.value;
+    try { localStorage.setItem(STORAGE_LOC, id); } catch (e) { /* ignore */ }
+    loadMeteo(id);
+  }
 
-  fillSelect(saved);
-  persistAndLoad();
-  selectEl.addEventListener("change", persistAndLoad);
+  function persistStation() {
+    const id = stationSelect.value;
+    try { localStorage.setItem(STORAGE_STATION, id); } catch (e) { /* ignore */ }
+    renderStation(findStation(id));
+  }
+
+  let savedLoc = "tanjung-redeb";
+  let savedStation = "klhk:SAMARINDA";
+  try {
+    savedLoc = localStorage.getItem(STORAGE_LOC) || savedLoc;
+    savedStation = localStorage.getItem(STORAGE_STATION) || savedStation;
+    slide = localStorage.getItem(STORAGE_SLIDE) === "1" ? 1 : 0;
+    if (location.hash === "#stasiun") slide = 1;
+  } catch (e) { /* ignore */ }
+
+  fillSelect(savedLoc);
+  persistMeteo();
+  loadStations(savedStation);
+  setSlide(slide);
+
+  selectEl.addEventListener("change", persistMeteo);
+  stationSelect.addEventListener("change", persistStation);
+
+  tabs.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setSlide(Number(btn.getAttribute("data-slide")));
+    });
+  });
+  const prev = document.getElementById("aqi-prev");
+  const next = document.getElementById("aqi-next");
+  if (prev) prev.addEventListener("click", function () { setSlide(slide ? 0 : 1); });
+  if (next) next.addEventListener("click", function () { setSlide(slide ? 0 : 1); });
+
+  const viewport = document.getElementById("aqi-viewport");
+  if (viewport) {
+    let startX = 0;
+    viewport.addEventListener("pointerdown", function (e) {
+      if (e.target && e.target.closest && e.target.closest("select")) return;
+      startX = e.clientX;
+    });
+    viewport.addEventListener("pointerup", function (e) {
+      if (e.target && e.target.closest && e.target.closest("select")) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) < 40) return;
+      setSlide(dx < 0 ? 1 : 0);
+    });
+  }
 
   timer = setInterval(function () {
-    load(selectEl.value);
+    loadMeteo(selectEl.value);
+    loadStations(stationSelect.value);
   }, REFRESH_MS);
 
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden) load(selectEl.value);
+    if (document.hidden) return;
+    loadMeteo(selectEl.value);
+    loadStations(stationSelect.value);
   });
 
   window.addEventListener("beforeunload", function () {

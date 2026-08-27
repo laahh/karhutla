@@ -419,7 +419,8 @@
       rencana: dash(rep.rencana_kegiatan_besok),
       docsCount: docs.jumlah_gambar_tertanam,
       docsNote: dash(docs.catatan),
-      index: index
+      index: index,
+      eksternal: typeof op.eksternal === "boolean" ? op.eksternal : null
     };
   }
 
@@ -435,6 +436,7 @@
       base.lng = lap.lng;
     }
     if (lap.site && lap.site !== "—") base.site = lap.site;
+    if (typeof lap.eksternal === "boolean") base.eksternal = lap.eksternal;
     return base;
   }
 
@@ -500,7 +502,9 @@
         responder: lap.timBc,
         notifikasi: "",
         keterangan: null,
-        eksternal: hasCoord(lap) ? !insideIupk(lap.lat, lap.lng) : false,
+        eksternal: typeof lap.eksternal === "boolean"
+          ? lap.eksternal
+          : (hasCoord(lap) ? !insideIupk(lap.lat, lap.lng) : false),
         media: {
           photos: randomFieldPhotos(),
           video: null

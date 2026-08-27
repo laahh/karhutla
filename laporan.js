@@ -21,6 +21,7 @@
     selesai: document.getElementById("f-selesai"),
     lokasi: document.getElementById("f-lokasi"),
     koordinat: document.getElementById("f-koordinat"),
+    wilayah: document.getElementById("f-wilayah"),
     timBc: document.getElementById("f-tim-bc"),
     timVol: document.getElementById("f-tim-vol"),
     timUnit: document.getElementById("f-tim-unit"),
@@ -135,6 +136,7 @@
     fields.selesai.value = timeValue(op.selesai_operasi);
     fields.lokasi.value = text(op.lokasi_pemadaman);
     fields.koordinat.value = text(op.titik_koordinat_pemadaman);
+    fields.wilayah.value = op.eksternal === true ? "eksternal" : "internal";
     fields.timBc.value = text(tim.berau_coal);
     fields.timVol.value = text(tim.volunteer);
     fields.timUnit.value = text(tim.unit_support);
@@ -155,7 +157,7 @@
     activeIndex = index;
     if (index >= 0) {
       titleEl.textContent = "Ubah laporan";
-      hintEl.textContent = "Mengubah data yang sudah tersimpan di laporan-data.js.";
+      hintEl.textContent = "Mengubah data yang sudah tersimpan. Setelah simpan, timpa laporan-data.js di folder project.";
     } else {
       titleEl.textContent = "Laporan baru";
       hintEl.textContent = "Lengkapi data operasi. Kolom bertanda * wajib diisi.";
@@ -183,6 +185,7 @@
         selesai_operasi: withWita(fields.selesai.value),
         lokasi_pemadaman: emptyToNull(fields.lokasi.value),
         titik_koordinat_pemadaman: emptyToNull(fields.koordinat.value),
+        eksternal: fields.wilayah.value === "eksternal",
         jumlah_tim: {
           berau_coal: emptyToNull(fields.timBc.value),
           volunteer: emptyToNull(fields.timVol.value),
@@ -221,6 +224,7 @@
       rep.sheet_name,
       op.tanggal,
       op.lokasi_pemadaman,
+      op.eksternal ? "eksternal" : "internal",
       op.titik_koordinat_pemadaman,
       op.jumlah_titik_api_yang_dipadamkan
     ].join(" ").toLowerCase();
@@ -255,7 +259,8 @@
       btn.setAttribute("role", "listitem");
       btn.innerHTML = "<strong></strong><small></small>";
       btn.querySelector("strong").textContent = row.rep.sheet_name || formatDateId(dayKey(op.tanggal));
-      btn.querySelector("small").textContent = (op.lokasi_pemadaman || "Lokasi belum diisi") +
+      btn.querySelector("small").textContent = (op.eksternal ? "Eksternal" : "Internal") +
+        " · " + (op.lokasi_pemadaman || "Lokasi belum diisi") +
         (op.mulai_operasi ? " · " + op.mulai_operasi : "");
       btn.addEventListener("click", function () {
         setStatus("");
@@ -263,6 +268,76 @@
       });
       listEl.appendChild(btn);
     });
+  }
+
+  function reportSortKey(rep) {
+    const op = (rep && rep.operasi_karhutla) || {};
+    return String(op.tanggal || "") + " " + String(op.mulai_operasi || "");
+  }
+
+  function applyReportToStore(report) {
+    const store = dataStore();
+    const items = store.reports.slice();
+    if (activeIndex >= 0 && items[activeIndex]) {
+      items[activeIndex] = report;
+    } else {
+      items.push(report);
+    }
+    items.sort(function (a, b) {
+      return reportSortKey(a).localeCompare(reportSortKey(b));
+    });
+    store.reports = items;
+    store.total_reports = items.length;
+    if (!store.source_file) store.source_file = "Form input laporan KARHUTLA";
+    return items.indexOf(report);
+  }
+
+  function serializeStore() {
+    return "window.KARHUTLA_LAPORAN_DATA = " + JSON.stringify(dataStore(), null, 4) + ";\n";
+  }
+
+  async function writeLaporanFile(js) {
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: "laporan-data.js",
+          types: [{
+            description: "Laporan KARHUTLA",
+            accept: { "text/javascript": [".js"] }
+          }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(js);
+        await writable.close();
+        return "picker";
+      } catch (err) {
+        if (err && err.name === "AbortError") throw err;
+      }
+    }
+    const blob = new Blob([js], { type: "text/javascript;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "laporan-data.js";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    return "download";
+  }
+
+  async function saveViaPhp(report) {
+    const res = await fetch("save-laporan.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        index: activeIndex >= 0 ? activeIndex : null,
+        report: report
+      })
+    });
+    const json = await res.json().catch(function () { return null; });
+    if (!res.ok || !json || !json.ok) return null;
+    return json;
   }
 
   async function saveReport(event) {
@@ -274,28 +349,36 @@
     }
 
     saveBtn.disabled = true;
-    setStatus("Menyimpan ke laporan-data.js…");
+    setStatus("Menyimpan laporan…");
 
     try {
-      const res = await fetch("save-laporan.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          index: activeIndex >= 0 ? activeIndex : null,
-          report: report
-        })
-      });
-      const json = await res.json().catch(function () { return null; });
-      if (!res.ok || !json || !json.ok) {
-        const msg = json && json.error
-          ? json.error
-          : "Gagal menyimpan. Buka halaman ini lewat Laragon (PHP), bukan sebagai file.";
-        throw new Error(msg);
+      let phpResult = null;
+      try {
+        phpResult = await saveViaPhp(report);
+      } catch (e) {
+        phpResult = null;
       }
-      window.KARHUTLA_LAPORAN_DATA = json.data;
-      fillForm(json.data.reports[json.index], json.index);
-      setStatus("Tersimpan. Total " + json.total_reports + " laporan di laporan-data.js.", "is-ok");
+
+      if (phpResult) {
+        window.KARHUTLA_LAPORAN_DATA = phpResult.data;
+        fillForm(phpResult.data.reports[phpResult.index], phpResult.index);
+        setStatus("Tersimpan. Total " + phpResult.total_reports + " laporan di laporan-data.js.", "is-ok");
+        return;
+      }
+
+      const index = applyReportToStore(report);
+      const mode = await writeLaporanFile(serializeStore());
+      fillForm(reports()[index], index);
+      if (mode === "picker") {
+        setStatus("Tersimpan ke laporan-data.js. Total " + dataStore().total_reports + " laporan.", "is-ok");
+      } else {
+        setStatus("File laporan-data.js diunduh. Timpa file dengan nama sama di folder project.", "is-ok");
+      }
     } catch (err) {
+      if (err && err.name === "AbortError") {
+        setStatus("Penyimpanan dibatalkan.", "is-err");
+        return;
+      }
       setStatus(err.message || "Gagal menyimpan laporan.", "is-err");
     } finally {
       saveBtn.disabled = false;
@@ -322,6 +405,7 @@
       selesai: dash(op.selesai_operasi),
       lokasi: dash(op.lokasi_pemadaman),
       koordinat: dash(op.titik_koordinat_pemadaman),
+      wilayah: op.eksternal === true ? "Eksternal" : "Internal",
       titikApi: dash(op.jumlah_titik_api_yang_dipadamkan),
       timBc: dash(tim.berau_coal),
       volunteer: dash(tim.volunteer),
@@ -355,6 +439,7 @@
       ["Selesai operasi", r.selesai],
       ["Lokasi pemadaman", r.lokasi],
       ["Titik koordinat", r.koordinat],
+      ["Wilayah", r.wilayah],
       ["Jumlah titik api dipadamkan", r.titikApi],
       [],
       ["JUMLAH TIM"],
@@ -386,7 +471,7 @@
   function rekapHeaders() {
     return [
       "No", "Nama sheet", "Tanggal", "Mulai operasi", "Selesai operasi",
-      "Lokasi pemadaman", "Titik koordinat", "Titik api dipadamkan",
+      "Lokasi pemadaman", "Titik koordinat", "Wilayah", "Titik api dipadamkan",
       "Tim Berau Coal", "Volunteer", "Unit support", "Peralatan", "Konsumsi",
       "Kelebihan — tim", "Kelebihan — unit", "Kelebihan — peralatan", "Kelebihan — konsumsi",
       "Kekurangan — tim", "Kekurangan — unit", "Kekurangan — peralatan", "Kekurangan — konsumsi",
@@ -397,7 +482,7 @@
   function rekapRow(rep, no) {
     const r = flattenReport(rep, no);
     return [
-      r.no, r.sheet, r.tanggal, r.mulai, r.selesai, r.lokasi, r.koordinat, r.titikApi,
+      r.no, r.sheet, r.tanggal, r.mulai, r.selesai, r.lokasi, r.koordinat, r.wilayah, r.titikApi,
       r.timBc, r.volunteer, r.unit, r.alat, r.konsumsi,
       r.plusTim, r.plusUnit, r.plusAlat, r.plusKonsumsi,
       r.minusTim, r.minusUnit, r.minusAlat, r.minusKonsumsi,
@@ -465,7 +550,7 @@
         rekap.push(rekapRow(rep, i + 1));
       });
       const rekapSheet = XLSX.utils.aoa_to_sheet(rekap);
-      applyColWidths(rekapSheet, [5, 22, 18, 16, 16, 28, 28, 28, 28, 24, 28, 28, 24, 22, 22, 22, 22, 24, 24, 24, 24, 28, 14]);
+      applyColWidths(rekapSheet, [5, 22, 18, 16, 16, 28, 28, 12, 28, 28, 24, 28, 28, 24, 22, 22, 22, 22, 24, 24, 24, 24, 28, 14]);
       XLSX.utils.book_append_sheet(wb, rekapSheet, "Rekap");
 
       const used = { Rekap: true };

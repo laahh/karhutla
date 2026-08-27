@@ -145,7 +145,8 @@ window.KarhutlaData = (function () {
       lokasi: place.lokasi,
       lat: xy.lat,
       lng: xy.lng,
-      index: index
+      index: index,
+      eksternal: typeof op.eksternal === "boolean" ? op.eksternal : null
     };
   }
 
@@ -169,13 +170,20 @@ window.KarhutlaData = (function () {
         }
       });
       if (best && bestD <= MATCH_KM) best.used = true;
-      out.push({ tanggal: key, eksternal: isEksternal(rec, lat, lng) });
+      out.push({
+        tanggal: key,
+        eksternal: (best && best.used && typeof best.eksternal === "boolean")
+          ? best.eksternal
+          : isEksternal(rec, lat, lng)
+      });
     });
     laps.forEach(function (lap) {
       if (lap.used) return;
       out.push({
         tanggal: lap.tanggal,
-        eksternal: hasCoord(lap) ? !insideIupk(lap.lat, lap.lng) : false
+        eksternal: typeof lap.eksternal === "boolean"
+          ? lap.eksternal
+          : (hasCoord(lap) ? !insideIupk(lap.lat, lap.lng) : false)
       });
     });
     return out;

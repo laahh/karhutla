@@ -89,36 +89,78 @@
         </div>
       </div>
 
-      <aside class="live-card live-card--aqi" id="aqi-card" data-level="unknown">
+      <aside class="live-card live-card--aqi" id="aqi-card" data-level="unknown" data-slide="0" data-scale="us">
         <div class="aqi-head">
           <span class="pulse" aria-hidden="true"></span>
           <div class="aqi-head-text">
             <small>INDEKS KUALITAS UDARA</small>
-            <label class="aqi-loc">
-              <span class="sr-only">Pilih lokasi</span>
-              <select id="aqi-location" aria-label="Pilih lokasi kualitas udara"></select>
-            </label>
+            <p class="aqi-source" id="aqi-source">Open-Meteo · model</p>
           </div>
         </div>
-        <div class="aqi-body" aria-live="polite">
-          <div class="aqi-score">
-            <strong id="aqi-value">–</strong>
-            <span id="aqi-unit">US AQI</span>
-          </div>
-          <div class="aqi-meta">
-            <p id="aqi-category">Memuat data…</p>
-            <small id="aqi-detail">PM2.5 —</small>
+
+        <div class="aqi-viewport" id="aqi-viewport">
+          <div class="aqi-track" id="aqi-track">
+            <section class="aqi-slide" data-source="meteo" aria-label="Open-Meteo">
+              <label class="aqi-loc">
+                <span class="sr-only">Pilih lokasi model</span>
+                <select id="aqi-location" aria-label="Pilih lokasi kualitas udara Open-Meteo"></select>
+              </label>
+              <div class="aqi-body" aria-live="polite">
+                <div class="aqi-score">
+                  <strong id="aqi-value">–</strong>
+                  <span id="aqi-unit">US AQI</span>
+                </div>
+                <div class="aqi-meta">
+                  <p id="aqi-category">Memuat data…</p>
+                  <small id="aqi-detail">PM2.5 —</small>
+                </div>
+              </div>
+              <div class="aqi-scale" aria-hidden="true">
+                <span data-band="good"></span>
+                <span data-band="moderate"></span>
+                <span data-band="sensitive"></span>
+                <span data-band="unhealthy"></span>
+                <span data-band="very"></span>
+                <span data-band="hazard"></span>
+              </div>
+              <p class="aqi-updated" id="aqi-updated">Menghubungkan ke Open-Meteo…</p>
+            </section>
+
+            <section class="aqi-slide" data-source="station" aria-label="Stasiun BMKG dan KLHK">
+              <label class="aqi-loc">
+                <span class="sr-only">Pilih stasiun BMKG atau KLHK</span>
+                <select id="aqi-station" aria-label="Pilih stasiun BMKG atau KLHK"></select>
+              </label>
+              <div class="aqi-body" aria-live="polite">
+                <div class="aqi-score">
+                  <strong id="aqi-st-value">–</strong>
+                  <span id="aqi-st-unit">ISPU</span>
+                </div>
+                <div class="aqi-meta">
+                  <p id="aqi-st-category">Memuat stasiun…</p>
+                  <small id="aqi-st-detail">PM2.5 —</small>
+                </div>
+              </div>
+              <div class="aqi-scale aqi-scale--ispu" aria-hidden="true">
+                <span data-band="good"></span>
+                <span data-band="moderate"></span>
+                <span data-band="unhealthy"></span>
+                <span data-band="very"></span>
+                <span data-band="hazard"></span>
+              </div>
+              <p class="aqi-updated" id="aqi-st-updated">Menghubungkan ke stasiun BMKG / KLHK…</p>
+            </section>
           </div>
         </div>
-        <div class="aqi-scale" aria-hidden="true">
-          <span data-band="good"></span>
-          <span data-band="moderate"></span>
-          <span data-band="sensitive"></span>
-          <span data-band="unhealthy"></span>
-          <span data-band="very"></span>
-          <span data-band="hazard"></span>
+
+        <div class="aqi-pager">
+          <button type="button" class="aqi-arrow" id="aqi-prev" aria-label="Sumber sebelumnya">‹</button>
+          <div class="aqi-tabs" role="tablist" aria-label="Sumber data kualitas udara">
+            <button type="button" class="is-active" role="tab" data-slide="0" aria-selected="true">Open-Meteo</button>
+            <button type="button" role="tab" data-slide="1" aria-selected="false">BMKG / KLHK</button>
+          </div>
+          <button type="button" class="aqi-arrow" id="aqi-next" aria-label="Sumber berikutnya">›</button>
         </div>
-        <p class="aqi-updated" id="aqi-updated">Menghubungkan ke Open-Meteo…</p>
       </aside>
     </div>
 

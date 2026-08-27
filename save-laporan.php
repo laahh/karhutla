@@ -73,6 +73,21 @@ function int_field($source, $key, $fallback) {
     return intval($source[$key]);
 }
 
+function bool_field($source, $key) {
+    if (!isset($source[$key])) {
+        return false;
+    }
+    $value = $source[$key];
+    if (is_bool($value)) {
+        return $value;
+    }
+    if (is_int($value) || is_float($value)) {
+        return intval($value) === 1;
+    }
+    $text = strtolower(trim(strval($value)));
+    return $text === '1' || $text === 'true' || $text === 'eksternal';
+}
+
 function normalize_report($input) {
     $opIn = isset($input['operasi_karhutla']) && is_array($input['operasi_karhutla'])
         ? $input['operasi_karhutla'] : array();
@@ -106,6 +121,7 @@ function normalize_report($input) {
             'selesai_operasi' => str_field($opIn, 'selesai_operasi'),
             'lokasi_pemadaman' => $lokasi,
             'titik_koordinat_pemadaman' => str_field($opIn, 'titik_koordinat_pemadaman'),
+            'eksternal' => bool_field($opIn, 'eksternal'),
             'jumlah_tim' => array(
                 'berau_coal' => str_field($timIn, 'berau_coal'),
                 'volunteer' => str_field($timIn, 'volunteer'),

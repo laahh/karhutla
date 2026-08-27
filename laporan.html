@@ -52,7 +52,7 @@
       <div>
         <p class="eyebrow">PENANGANAN KARHUTLA PT BERAU COAL</p>
         <h1>Input Laporan Operasi</h1>
-        <p class="lp-lead">Isi laporan pemadaman sesuai format data yang dipakai peta hotspot. Setelah disimpan ke Database Laporan, data akan otomatis tertulis ke peta hotspot.</p>
+        <p class="lp-lead">Isi laporan pemadaman sesuai format data yang dipakai peta hotspot. Setelah disimpan, timpa <code>laporan-data.js</code> di folder project agar data tertulis ke peta hotspot.</p>
       </div>
       <div class="lp-hero-meta">
         <span class="lp-count" id="lp-count">0 laporan</span>
@@ -111,7 +111,7 @@
                 <input type="time" name="selesai_operasi" id="f-selesai">
               </label>
             </div>
-            <div class="lp-grid lp-grid-2">
+            <div class="lp-grid lp-grid-3">
               <label>
                 <span>Lokasi pemadaman *</span>
                 <input type="text" name="lokasi_pemadaman" id="f-lokasi" required placeholder="contoh: Area Revegetasi_GMO">
@@ -119,6 +119,13 @@
               <label>
                 <span>Titik koordinat</span>
                 <input type="text" name="titik_koordinat" id="f-koordinat" placeholder="2.162913°N  117.615015°E">
+              </label>
+              <label>
+                <span>Wilayah *</span>
+                <select name="wilayah" id="f-wilayah" required>
+                  <option value="internal">Internal</option>
+                  <option value="eksternal">Eksternal</option>
+                </select>
               </label>
             </div>
           </fieldset>
