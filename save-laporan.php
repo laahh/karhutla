@@ -9,7 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $raw = file_get_contents('php://input');
 $payload = json_decode($raw, true);
-if (!is_array($payload) || !isset($payload['report']) || !is_array($payload['report'])) {
+if (!is_array($payload)) {
+    http_response_code(400);
+    echo json_encode(array('ok' => false, 'error' => 'Data laporan tidak valid.'));
+    exit;
+}
+
+$action = isset($payload['action']) ? strval($payload['action']) : 'save';
+if ($action !== 'delete' && (!isset($payload['report']) || !is_array($payload['report']))) {
     http_response_code(400);
     echo json_encode(array('ok' => false, 'error' => 'Data laporan tidak valid.'));
     exit;
@@ -167,39 +174,49 @@ if ($data === null) {
     exit;
 }
 
-$report = normalize_report($payload['report']);
-if ($report === null) {
-    http_response_code(400);
-    echo json_encode(array('ok' => false, 'error' => 'Tanggal dan lokasi pemadaman wajib diisi.'));
-    exit;
-}
-
 $reports = $data['reports'];
 $index = isset($payload['index']) && $payload['index'] !== '' && $payload['index'] !== null
     ? intval($payload['index']) : -1;
 
-if ($index >= 0) {
-    if (!isset($reports[$index])) {
+if ($action === 'delete') {
+    if ($index < 0 || !isset($reports[$index])) {
         http_response_code(400);
-        echo json_encode(array('ok' => false, 'error' => 'Laporan yang akan diubah tidak ditemukan.'));
+        echo json_encode(array('ok' => false, 'error' => 'Laporan yang akan dihapus tidak ditemukan.'));
         exit;
     }
-    $reports[$index] = $report;
-    $savedIndex = $index;
+    array_splice($reports, $index, 1);
+    $savedIndex = -1;
 } else {
-    $reports[] = $report;
-    $savedIndex = count($reports) - 1;
-}
+    $report = normalize_report($payload['report']);
+    if ($report === null) {
+        http_response_code(400);
+        echo json_encode(array('ok' => false, 'error' => 'Tanggal dan lokasi pemadaman wajib diisi.'));
+        exit;
+    }
 
-usort($reports, function ($a, $b) {
-    return strcmp(report_sort_key($a), report_sort_key($b));
-});
+    if ($index >= 0) {
+        if (!isset($reports[$index])) {
+            http_response_code(400);
+            echo json_encode(array('ok' => false, 'error' => 'Laporan yang akan diubah tidak ditemukan.'));
+            exit;
+        }
+        $reports[$index] = $report;
+        $savedIndex = $index;
+    } else {
+        $reports[] = $report;
+        $savedIndex = count($reports) - 1;
+    }
 
-$savedIndex = 0;
-foreach ($reports as $i => $row) {
-    if ($row === $report) {
-        $savedIndex = $i;
-        break;
+    usort($reports, function ($a, $b) {
+        return strcmp(report_sort_key($a), report_sort_key($b));
+    });
+
+    $savedIndex = 0;
+    foreach ($reports as $i => $row) {
+        if ($row === $report) {
+            $savedIndex = $i;
+            break;
+        }
     }
 }
 

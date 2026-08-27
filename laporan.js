@@ -253,20 +253,54 @@
 
     visible.forEach(function (row) {
       const op = (row.rep && row.rep.operasi_karhutla) || {};
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "lp-item" + (row.index === activeIndex ? " is-active" : "");
-      btn.setAttribute("role", "listitem");
-      btn.innerHTML = "<strong></strong><small></small>";
-      btn.querySelector("strong").textContent = row.rep.sheet_name || formatDateId(dayKey(op.tanggal));
-      btn.querySelector("small").textContent = (op.eksternal ? "Eksternal" : "Internal") +
+      const item = document.createElement("div");
+      item.className = "lp-item" + (row.index === activeIndex ? " is-active" : "");
+      item.setAttribute("role", "listitem");
+
+      const main = document.createElement("button");
+      main.type = "button";
+      main.className = "lp-item-main";
+      main.innerHTML = "<strong></strong><small></small>";
+      main.querySelector("strong").textContent = row.rep.sheet_name || formatDateId(dayKey(op.tanggal));
+      main.querySelector("small").textContent = (op.eksternal ? "Eksternal" : "Internal") +
         " · " + (op.lokasi_pemadaman || "Lokasi belum diisi") +
         (op.mulai_operasi ? " · " + op.mulai_operasi : "");
-      btn.addEventListener("click", function () {
+      main.addEventListener("click", function () {
         setStatus("");
         fillForm(row.rep, row.index);
       });
-      listEl.appendChild(btn);
+
+      const actions = document.createElement("div");
+      actions.className = "lp-item-actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "lp-item-btn";
+      editBtn.title = "Ubah laporan";
+      editBtn.setAttribute("aria-label", "Ubah laporan");
+      editBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5-4-4L4 16v4Z"/><path d="M13.5 6.5l4 4"/></svg>';
+      editBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setStatus("");
+        fillForm(row.rep, row.index);
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "lp-item-btn lp-item-btn-del";
+      delBtn.title = "Hapus laporan";
+      delBtn.setAttribute("aria-label", "Hapus laporan");
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V5h6v2"/></svg>';
+      delBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        deleteReport(row.index, row.rep);
+      });
+
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      item.appendChild(main);
+      item.appendChild(actions);
+      listEl.appendChild(item);
     });
   }
 
@@ -338,6 +372,93 @@
     const json = await res.json().catch(function () { return null; });
     if (!res.ok || !json || !json.ok) return null;
     return json;
+  }
+
+  async function deleteViaPhp(index) {
+    const res = await fetch("save-laporan.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", index: index })
+    });
+    const json = await res.json().catch(function () { return null; });
+    if (!res.ok || !json || !json.ok) return null;
+    return json;
+  }
+
+  function removeFromStore(index) {
+    const store = dataStore();
+    if (index < 0 || index >= store.reports.length) return false;
+    store.reports.splice(index, 1);
+    store.total_reports = store.reports.length;
+    return true;
+  }
+
+  async function persistLocalFile() {
+    const mode = await writeLaporanFile(serializeStore());
+    if (mode === "picker") {
+      setStatus("Perubahan tersimpan ke laporan-data.js. Total " + dataStore().total_reports + " laporan.", "is-ok");
+    } else {
+      setStatus("File laporan-data.js diunduh. Timpa file dengan nama sama di folder project.", "is-ok");
+    }
+  }
+
+  async function deleteReport(index, rep) {
+    const op = (rep && rep.operasi_karhutla) || {};
+    const label = (rep && rep.sheet_name) || formatDateId(dayKey(op.tanggal)) || "laporan ini";
+    if (!window.confirm("Hapus \"" + label + "\" dari daftar?\n\nSetelah itu timpa laporan-data.js di folder project.")) {
+      return;
+    }
+
+    const wasActive = activeIndex === index;
+    const store = dataStore();
+    const snapshot = store.reports.slice();
+    const snapshotTotal = store.total_reports;
+    try {
+      let phpResult = null;
+      try {
+        phpResult = await deleteViaPhp(index);
+      } catch (e) {
+        phpResult = null;
+      }
+
+      if (phpResult) {
+        window.KARHUTLA_LAPORAN_DATA = phpResult.data;
+        if (wasActive) resetForm();
+        else {
+          if (activeIndex > index) activeIndex -= 1;
+          renderList();
+        }
+        setStatus("Laporan dihapus. Total " + phpResult.total_reports + " laporan di laporan-data.js.", "is-ok");
+        return;
+      }
+
+      if (!removeFromStore(index)) {
+        setStatus("Laporan tidak ditemukan.", "is-err");
+        return;
+      }
+      await persistLocalFile();
+      if (wasActive) {
+        form.reset();
+        fields.index.value = "";
+        fields.gambar.value = "0";
+        fields.catatan.value = "Gambar tertanam tidak dienkode ke dalam JSON.";
+        activeIndex = -1;
+        titleEl.textContent = "Laporan baru";
+        hintEl.textContent = "Lengkapi data operasi. Kolom bertanda * wajib diisi.";
+      } else if (activeIndex > index) {
+        activeIndex -= 1;
+      }
+      renderList();
+    } catch (err) {
+      store.reports = snapshot;
+      store.total_reports = snapshotTotal;
+      renderList();
+      if (err && err.name === "AbortError") {
+        setStatus("Penghapusan dibatalkan.", "is-err");
+        return;
+      }
+      setStatus(err.message || "Gagal menghapus laporan.", "is-err");
+    }
   }
 
   async function saveReport(event) {

@@ -169,15 +169,16 @@ html:has(.page-laporan) {
 }
 
 .lp-item {
-  display: block;
+  display: flex;
+  align-items: stretch;
   width: 100%;
   text-align: left;
-  padding: 10px 11px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 10px;
   background: rgba(255, 255, 255, .03);
   color: inherit;
-  cursor: pointer;
+  overflow: hidden;
   transition: border-color .2s ease, background .2s ease;
 }
 
@@ -185,6 +186,51 @@ html:has(.page-laporan) {
 .lp-item.is-active {
   border-color: rgba(134, 209, 92, .7);
   background: rgba(107, 180, 67, .12);
+}
+
+.lp-item-main {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  text-align: left;
+  padding: 10px 11px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.lp-item-actions {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  border-left: 1px solid rgba(255, 255, 255, .08);
+}
+
+.lp-item-btn {
+  flex: 1;
+  width: 36px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #c5c9ca;
+  cursor: pointer;
+}
+
+.lp-item-btn:hover {
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+}
+
+.lp-item-btn-del:hover {
+  background: rgba(239, 90, 54, .2);
+  color: #ff8a70;
+}
+
+.lp-item-btn svg {
+  width: 15px;
+  height: 15px;
 }
 
 .lp-item strong {
