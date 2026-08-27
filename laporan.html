@@ -56,6 +56,10 @@
       </div>
       <div class="lp-hero-meta">
         <span class="lp-count" id="lp-count">0 laporan</span>
+        <button type="button" class="lp-btn-download" id="lp-download-all">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M5 19h14"/></svg>
+          Unduh Excel
+        </button>
         <button type="button" class="lp-btn-new" id="lp-new">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           Laporan baru
@@ -208,6 +212,7 @@
             <p class="lp-status" id="lp-status" role="status"></p>
             <div class="lp-actions-btns">
               <button type="button" class="lp-btn-ghost" id="lp-reset">Batal</button>
+              <button type="button" class="lp-btn-ghost" id="lp-download-one">Unduh Excel ini</button>
               <button type="submit" class="lp-btn-save" id="lp-save">Simpan ke laporan-data.js</button>
             </div>
           </div>
@@ -217,6 +222,7 @@
   </main>
 
   <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="laporan-data.js"></script>
   <script src="laporan.js"></script>
   <script src="embers.js"></script>

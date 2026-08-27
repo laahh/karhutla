@@ -299,13 +299,16 @@ html:has(.page-laporan) {
 
 .lp-actions-btns {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   flex: none;
 }
 
 .lp-btn-new,
 .lp-btn-save,
-.lp-btn-ghost {
+.lp-btn-ghost,
+.lp-btn-download {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -332,9 +335,22 @@ html:has(.page-laporan) {
   background: #6dbf4d;
 }
 
-.lp-btn-new svg {
+.lp-btn-new svg,
+.lp-btn-download svg {
   width: 16px;
   height: 16px;
+}
+
+.lp-btn-download {
+  border: 1px solid rgba(134, 209, 92, .55);
+  background: rgba(107, 180, 67, .12);
+  color: #c6e89a;
+}
+
+.lp-btn-download:hover {
+  border-color: rgba(134, 209, 92, .9);
+  background: rgba(107, 180, 67, .22);
+  color: #fff;
 }
 
 .lp-btn-ghost {

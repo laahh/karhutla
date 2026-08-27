@@ -302,6 +302,213 @@
     }
   }
 
+  function dash(value) {
+    const t = text(value).trim();
+    return t === "" ? "" : t;
+  }
+
+  function flattenReport(rep, no) {
+    const op = (rep && rep.operasi_karhutla) || {};
+    const tim = op.jumlah_tim || {};
+    const evalRep = (rep && rep.evaluasi) || {};
+    const plus = evalRep.kelebihan || {};
+    const minus = evalRep.kekurangan || {};
+    const docs = (rep && rep.dokumentasi) || {};
+    return {
+      no: no,
+      sheet: dash(rep && rep.sheet_name),
+      tanggal: formatDateId(dayKey(op.tanggal)),
+      mulai: dash(op.mulai_operasi),
+      selesai: dash(op.selesai_operasi),
+      lokasi: dash(op.lokasi_pemadaman),
+      koordinat: dash(op.titik_koordinat_pemadaman),
+      titikApi: dash(op.jumlah_titik_api_yang_dipadamkan),
+      timBc: dash(tim.berau_coal),
+      volunteer: dash(tim.volunteer),
+      unit: dash(tim.unit_support),
+      alat: dash(tim.peralatan_yang_digunakan),
+      konsumsi: dash(tim.konsumsi),
+      plusTim: dash(plus.jumlah_tim),
+      plusUnit: dash(plus.unit_support),
+      plusAlat: dash(plus.peralatan),
+      plusKonsumsi: dash(plus.konsumsi),
+      minusTim: dash(minus.jumlah_tim),
+      minusUnit: dash(minus.unit_support),
+      minusAlat: dash(minus.peralatan_yang_digunakan),
+      minusKonsumsi: dash(minus.konsumsi),
+      rencana: dash(rep && rep.rencana_kegiatan_besok),
+      gambar: docs.jumlah_gambar_tertanam != null ? docs.jumlah_gambar_tertanam : "",
+      catatan: dash(docs.catatan)
+    };
+  }
+
+  function reportSheetRows(rep, no) {
+    const r = flattenReport(rep, no);
+    return [
+      ["LAPORAN OPERASI KARHUTLA"],
+      ["PT Berau Coal — Command Center"],
+      [],
+      ["OPERASI KARHUTLA"],
+      ["Nama sheet", r.sheet],
+      ["Tanggal", r.tanggal],
+      ["Mulai operasi", r.mulai],
+      ["Selesai operasi", r.selesai],
+      ["Lokasi pemadaman", r.lokasi],
+      ["Titik koordinat", r.koordinat],
+      ["Jumlah titik api dipadamkan", r.titikApi],
+      [],
+      ["JUMLAH TIM"],
+      ["Berau Coal", r.timBc],
+      ["Volunteer", r.volunteer],
+      ["Unit support", r.unit],
+      ["Peralatan yang digunakan", r.alat],
+      ["Konsumsi", r.konsumsi],
+      [],
+      ["EVALUASI — KELEBIHAN"],
+      ["Jumlah tim", r.plusTim],
+      ["Unit support", r.plusUnit],
+      ["Peralatan", r.plusAlat],
+      ["Konsumsi", r.plusKonsumsi],
+      [],
+      ["EVALUASI — KEKURANGAN"],
+      ["Jumlah tim", r.minusTim],
+      ["Unit support", r.minusUnit],
+      ["Peralatan", r.minusAlat],
+      ["Konsumsi", r.minusKonsumsi],
+      [],
+      ["RENCANA & DOKUMENTASI"],
+      ["Rencana kegiatan besok", r.rencana],
+      ["Jumlah gambar tertanam", r.gambar],
+      ["Catatan dokumentasi", r.catatan]
+    ];
+  }
+
+  function rekapHeaders() {
+    return [
+      "No", "Nama sheet", "Tanggal", "Mulai operasi", "Selesai operasi",
+      "Lokasi pemadaman", "Titik koordinat", "Titik api dipadamkan",
+      "Tim Berau Coal", "Volunteer", "Unit support", "Peralatan", "Konsumsi",
+      "Kelebihan — tim", "Kelebihan — unit", "Kelebihan — peralatan", "Kelebihan — konsumsi",
+      "Kekurangan — tim", "Kekurangan — unit", "Kekurangan — peralatan", "Kekurangan — konsumsi",
+      "Rencana kegiatan besok", "Jumlah gambar"
+    ];
+  }
+
+  function rekapRow(rep, no) {
+    const r = flattenReport(rep, no);
+    return [
+      r.no, r.sheet, r.tanggal, r.mulai, r.selesai, r.lokasi, r.koordinat, r.titikApi,
+      r.timBc, r.volunteer, r.unit, r.alat, r.konsumsi,
+      r.plusTim, r.plusUnit, r.plusAlat, r.plusKonsumsi,
+      r.minusTim, r.minusUnit, r.minusAlat, r.minusKonsumsi,
+      r.rencana, r.gambar
+    ];
+  }
+
+  function uniqueSheetName(raw, used) {
+    let name = String(raw || "Laporan")
+      .replace(/[:\\/?*\[\]]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!name) name = "Laporan";
+    if (name.length > 31) name = name.slice(0, 31).trim();
+    let candidate = name;
+    let n = 2;
+    while (used[candidate]) {
+      const suffix = " (" + n + ")";
+      candidate = (name.slice(0, Math.max(1, 31 - suffix.length)) + suffix).trim();
+      n += 1;
+    }
+    used[candidate] = true;
+    return candidate;
+  }
+
+  function applyColWidths(ws, widths) {
+    ws["!cols"] = widths.map(function (w) { return { wch: w }; });
+  }
+
+  function buildReportSheet(rep, no) {
+    const ws = XLSX.utils.aoa_to_sheet(reportSheetRows(rep, no));
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } }
+    ];
+    applyColWidths(ws, [32, 70]);
+    return ws;
+  }
+
+  function ensureXlsx() {
+    if (typeof XLSX === "undefined" || !XLSX.utils) {
+      throw new Error("Pustaka Excel belum termuat. Periksa koneksi internet lalu muat ulang halaman.");
+    }
+  }
+
+  function stamp() {
+    const n = new Date();
+    const m = String(n.getMonth() + 1).padStart(2, "0");
+    const d = String(n.getDate()).padStart(2, "0");
+    return n.getFullYear() + "-" + m + "-" + d;
+  }
+
+  function downloadAllExcel() {
+    try {
+      ensureXlsx();
+      const items = reports();
+      if (!items.length) {
+        setStatus("Belum ada laporan untuk diunduh.", "is-err");
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+      const rekap = [rekapHeaders()];
+      items.forEach(function (rep, i) {
+        rekap.push(rekapRow(rep, i + 1));
+      });
+      const rekapSheet = XLSX.utils.aoa_to_sheet(rekap);
+      applyColWidths(rekapSheet, [5, 22, 18, 16, 16, 28, 28, 28, 28, 24, 28, 28, 24, 22, 22, 22, 22, 24, 24, 24, 24, 28, 14]);
+      XLSX.utils.book_append_sheet(wb, rekapSheet, "Rekap");
+
+      const used = { Rekap: true };
+      items.forEach(function (rep, i) {
+        const name = uniqueSheetName(rep.sheet_name || ("Laporan " + (i + 1)), used);
+        XLSX.utils.book_append_sheet(wb, buildReportSheet(rep, i + 1), name);
+      });
+
+      XLSX.writeFile(wb, "Laporan KARHUTLA " + stamp() + ".xlsx");
+      setStatus("Excel " + items.length + " laporan berhasil diunduh.", "is-ok");
+    } catch (err) {
+      setStatus(err.message || "Gagal mengunduh Excel.", "is-err");
+    }
+  }
+
+  function downloadOneExcel() {
+    try {
+      ensureXlsx();
+      let rep = null;
+      let no = 1;
+      if (activeIndex >= 0 && reports()[activeIndex]) {
+        rep = reports()[activeIndex];
+        no = activeIndex + 1;
+      } else {
+        const drafted = readForm();
+        if (!drafted.operasi_karhutla.tanggal || !drafted.operasi_karhutla.lokasi_pemadaman) {
+          setStatus("Pilih laporan di daftar, atau isi tanggal dan lokasi terlebih dahulu.", "is-err");
+          return;
+        }
+        rep = drafted;
+      }
+
+      const wb = XLSX.utils.book_new();
+      const used = {};
+      const name = uniqueSheetName(rep.sheet_name || "Laporan", used);
+      XLSX.utils.book_append_sheet(wb, buildReportSheet(rep, no), name);
+      XLSX.writeFile(wb, "Laporan KARHUTLA - " + name + ".xlsx");
+      setStatus("Excel laporan \"" + name + "\" berhasil diunduh.", "is-ok");
+    } catch (err) {
+      setStatus(err.message || "Gagal mengunduh Excel.", "is-err");
+    }
+  }
+
   fields.tanggal.addEventListener("change", function () {
     if (activeIndex >= 0) return;
     fields.sheet.value = suggestSheetName(fields.tanggal.value, activeIndex);
@@ -309,6 +516,8 @@
 
   document.getElementById("lp-new").addEventListener("click", resetForm);
   document.getElementById("lp-reset").addEventListener("click", resetForm);
+  document.getElementById("lp-download-all").addEventListener("click", downloadAllExcel);
+  document.getElementById("lp-download-one").addEventListener("click", downloadOneExcel);
   searchEl.addEventListener("input", renderList);
   form.addEventListener("submit", saveReport);
 
