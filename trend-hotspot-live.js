@@ -2,8 +2,27 @@
   if (!window.KarhutlaData || typeof window.setTrendData !== "function") return;
   const KD = window.KarhutlaData;
 
-  const FROM = "2026-08-10";
-  const TO = "2026-08-25";
+  function laporanDateKeys() {
+    const keys = {};
+    const reports = window.KARHUTLA_LAPORAN_DATA && window.KARHUTLA_LAPORAN_DATA.reports;
+    (reports || []).forEach(function (rep) {
+      const op = (rep && rep.operasi_karhutla) || {};
+      const key = KD.dayKey(op.tanggal);
+      if (key) keys[key] = true;
+    });
+    return Object.keys(keys).sort();
+  }
+
+  function axisDateKeys(cases) {
+    const keys = {};
+    (cases || []).forEach(function (c) {
+      if (c && c.tanggal) keys[c.tanggal] = true;
+    });
+    laporanDateKeys().forEach(function (key) { keys[key] = true; });
+    const sorted = Object.keys(keys).sort();
+    if (!sorted.length) return [];
+    return buildDateRange(sorted[0], sorted[sorted.length - 1]);
+  }
 
   function buildDateRange(from, to) {
     const keys = [];
@@ -25,10 +44,17 @@
   }
 
   async function refresh() {
-    const dateKeys = buildDateRange(FROM, TO);
-    const labels = dateKeys.map(labelFor);
-
     const cases = KD.loadMergedCases();
+    const dateKeys = axisDateKeys(cases);
+    if (!dateKeys.length) return;
+    const labels = dateKeys.map(labelFor);
+    const chartEl = document.getElementById("trend-chart");
+    if (chartEl) {
+      chartEl.setAttribute(
+        "aria-label",
+        "Grafik tren hotspot dan karhutla " + labels[0] + " sampai " + labels[labels.length - 1]
+      );
+    }
     const internal = dateKeys.map(function (key) {
       return cases.filter(function (c) { return c.tanggal === key && !c.eksternal; }).length;
     });

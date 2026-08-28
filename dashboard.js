@@ -52,7 +52,15 @@
     const plotW = W - ML - MR;
     const plotH = H - MT - MB;
     const n = TREND_LABELS.length;
-    const yMax = 7;
+    if (!n) {
+      holder.innerHTML = "";
+      return;
+    }
+    let barMax = 0;
+    for (let i = 0; i < n; i += 1) {
+      barMax = Math.max(barMax, (Number(TREND_INTERNAL[i]) || 0) + (Number(TREND_EXTERNAL[i]) || 0));
+    }
+    const yMax = Math.max(7, Math.ceil(barMax));
     const activeMax = TREND_ACTIVE
       ? Math.max(100, Math.ceil(Math.max.apply(null, TREND_ACTIVE) / 100) * 100)
       : 700;
@@ -66,9 +74,10 @@
     let leftTicks = "";
     let rightTicks = "";
     for (let i = 0; i <= 7; i++) {
-      const y = yPix(i);
+      const v = i * yMax / 7;
+      const y = yPix(v);
       gridLines += '<line class="grid-line" x1="' + ML + '" x2="' + (ML + plotW) + '" y1="' + y + '" y2="' + y + '"/>';
-      leftTicks += '<text class="axis-tick" x="' + (ML - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + i.toFixed(1).replace(".", ",") + '</text>';
+      leftTicks += '<text class="axis-tick" x="' + (ML - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + (yMax <= 7 ? i.toFixed(1).replace(".", ",") : String(Math.round(v))) + '</text>';
       rightTicks += '<text class="axis-tick" x="' + (ML + plotW + 8) + '" y="' + (y + 3) + '" text-anchor="start">' + Math.round(i * activeMax / 7) + '</text>';
     }
 
