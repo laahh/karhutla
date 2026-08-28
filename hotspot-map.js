@@ -420,7 +420,10 @@
       docsCount: docs.jumlah_gambar_tertanam,
       docsNote: dash(docs.catatan),
       photos: Array.isArray(docs.files) ? docs.files.filter(function (src) {
+        if (window.KarhutlaLaporanStore) return KarhutlaLaporanStore.isPhotoRef(src);
         return typeof src === "string" && src.indexOf("laporan-foto/") === 0;
+      }).map(function (src) {
+        return window.KarhutlaLaporanStore ? (KarhutlaLaporanStore.displayUrl(src) || src) : src;
       }) : [],
       index: index,
       eksternal: typeof op.eksternal === "boolean" ? op.eksternal : null
@@ -956,11 +959,18 @@
   });
 
   opsLayer.addTo(map);
-  loadCases();
-  setTimeout(function () {
-    map.invalidateSize();
-    loadHotspots();
-  }, 180);
+  function startMap() {
+    loadCases();
+    setTimeout(function () {
+      map.invalidateSize();
+      loadHotspots();
+    }, 180);
+  }
+  if (window.KarhutlaLaporanStore) {
+    KarhutlaLaporanStore.hydrate().then(startMap).catch(startMap);
+  } else {
+    startMap();
+  }
   setInterval(function () {
     if (selectedDay === "today") loadHotspots();
   }, 5 * 60 * 1000);

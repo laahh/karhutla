@@ -35,5 +35,8 @@
       : sipongiCount + " titik hotspot SiPongi terpantau pada tanggal ini. Prioritaskan validasi dan respons lapangan.";
   }
 
-  refresh();
+  const ready = window.KarhutlaLaporanStore
+    ? KarhutlaLaporanStore.hydrate()
+    : Promise.resolve();
+  ready.then(refresh).catch(refresh);
 })();

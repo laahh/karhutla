@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/laporan.js": {
+      "includeFiles": "laporan-data.js"
+    }
+  }
+}

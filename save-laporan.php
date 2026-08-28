@@ -7,8 +7,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$raw = file_get_contents('php://input');
-$payload = json_decode($raw, true);
+function request_payload() {
+    $contentType = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : '';
+    if (stripos($contentType, 'multipart/form-data') !== false) {
+        $report = isset($_POST['report']) ? json_decode($_POST['report'], true) : null;
+        return array(
+            'action' => isset($_POST['action']) ? strval($_POST['action']) : 'save',
+            'index' => array_key_exists('index', $_POST) && $_POST['index'] !== '' ? $_POST['index'] : null,
+            'report' => is_array($report) ? $report : null,
+        );
+    }
+    $raw = file_get_contents('php://input');
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : null;
+}
+
+$payload = request_payload();
 if (!is_array($payload)) {
     http_response_code(400);
     echo json_encode(array('ok' => false, 'error' => 'Data laporan tidak valid.'));
@@ -95,6 +109,74 @@ function bool_field($source, $key) {
     return $text === '1' || $text === 'true' || $text === 'eksternal';
 }
 
+function photo_dir() {
+    $dir = __DIR__ . DIRECTORY_SEPARATOR . 'laporan-foto';
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return null;
+        }
+    }
+    return $dir;
+}
+
+function uploaded_photo_list() {
+    $out = array();
+    if (!isset($_FILES['photos'])) {
+        return $out;
+    }
+    $bag = $_FILES['photos'];
+    if (!is_array($bag['name'])) {
+        $bag = array(
+            'name' => array($bag['name']),
+            'type' => array($bag['type']),
+            'tmp_name' => array($bag['tmp_name']),
+            'error' => array($bag['error']),
+            'size' => array($bag['size']),
+        );
+    }
+    $count = count($bag['name']);
+    for ($i = 0; $i < $count; $i++) {
+        $out[] = array(
+            'name' => $bag['name'][$i],
+            'type' => isset($bag['type'][$i]) ? $bag['type'][$i] : '',
+            'tmp_name' => $bag['tmp_name'][$i],
+            'error' => $bag['error'][$i],
+            'size' => $bag['size'][$i],
+        );
+    }
+    return $out;
+}
+
+function save_uploaded_photos() {
+    $saved = array();
+    $uploads = uploaded_photo_list();
+    if (!$uploads) {
+        return $saved;
+    }
+    $dir = photo_dir();
+    if ($dir === null) {
+        throw new Exception('Folder laporan-foto tidak bisa dibuat.');
+    }
+    foreach ($uploads as $file) {
+        if (intval($file['error']) !== UPLOAD_ERR_OK) {
+            throw new Exception('Gagal mengunggah foto ke folder project.');
+        }
+        if (intval($file['size']) > 8 * 1024 * 1024) {
+            throw new Exception('Foto melebihi 8 MB.');
+        }
+        $name = basename(strval($file['name']));
+        if (!preg_match('/^[A-Za-z0-9._-]+\.(jpe?g|png|webp|gif)$/i', $name)) {
+            throw new Exception('Nama file foto tidak valid.');
+        }
+        $dest = $dir . DIRECTORY_SEPARATOR . $name;
+        if (!move_uploaded_file($file['tmp_name'], $dest)) {
+            throw new Exception('Gagal menyimpan foto ke folder project.');
+        }
+        $saved[] = 'laporan-foto/' . $name;
+    }
+    return $saved;
+}
+
 function files_field($source) {
     $out = array();
     if (!isset($source['files']) || !is_array($source['files'])) {
@@ -134,6 +216,7 @@ function normalize_report($input) {
     if (!$jumlah) {
         $jumlah = int_field($docIn, 'jumlah_gambar_tertanam', 0);
     }
+    $catatan = str_field($docIn, 'catatan');
 
     return array(
         'sheet_name' => str_field($input, 'sheet_name') ?: $tanggal,
@@ -193,6 +276,27 @@ if ($data === null) {
 $reports = $data['reports'];
 $index = isset($payload['index']) && $payload['index'] !== '' && $payload['index'] !== null
     ? intval($payload['index']) : -1;
+
+if ($action !== 'delete') {
+    try {
+        $uploadedPhotos = save_uploaded_photos();
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(array('ok' => false, 'error' => $e->getMessage()));
+        exit;
+    }
+    if ($uploadedPhotos) {
+        if (!isset($payload['report']) || !is_array($payload['report'])) {
+            $payload['report'] = array();
+        }
+        if (!isset($payload['report']['dokumentasi']) || !is_array($payload['report']['dokumentasi'])) {
+            $payload['report']['dokumentasi'] = array();
+        }
+        $existingFiles = isset($payload['report']['dokumentasi']['files']) && is_array($payload['report']['dokumentasi']['files'])
+            ? $payload['report']['dokumentasi']['files'] : array();
+        $payload['report']['dokumentasi']['files'] = array_values(array_unique(array_merge($existingFiles, $uploadedPhotos)));
+    }
+}
 
 if ($action === 'delete') {
     if ($index < 0 || !isset($reports[$index])) {

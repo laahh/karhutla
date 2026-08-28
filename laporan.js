@@ -45,7 +45,6 @@
   const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
   let existingPhotos = [];
   let pendingPhotos = [];
-  let projectDirHandle = null;
   let activeIndex = -1;
 
   function dataStore() {
@@ -137,9 +136,11 @@
   }
 
   function currentPhotoFiles() {
-    return existingPhotos.map(function (item) { return item.src; }).concat(
-      pendingPhotos.map(function (item) { return "laporan-foto/" + item.name; })
-    );
+    return existingPhotos.map(function (item) {
+      return item.stored || item.src;
+    }).concat(pendingPhotos.map(function (item) {
+      return item.uploaded || ("laporan-foto/" + item.name);
+    }));
   }
 
   function safePhotoName(file) {
@@ -214,17 +215,6 @@
     renderPhotos();
   }
 
-  function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
   function fillForm(rep, index) {
     const op = (rep && rep.operasi_karhutla) || {};
     const tim = op.jumlah_tim || {};
@@ -258,17 +248,20 @@
     fields.rencana.value = text(rep && rep.rencana_kegiatan_besok);
     fields.catatan.value = text(docs.catatan);
     clearPendingPhotos();
-    existingPhotos = (Array.isArray(docs.files) ? docs.files : []).filter(function (src) {
+    const files = Array.isArray(docs.files) ? docs.files : [];
+    existingPhotos = files.filter(function (src) {
+      if (window.KarhutlaLaporanStore) return KarhutlaLaporanStore.isPhotoRef(src);
       return typeof src === "string" && src.indexOf("laporan-foto/") === 0;
     }).map(function (src) {
-      return { src: src, name: src.split("/").pop() };
+      const shown = window.KarhutlaLaporanStore ? (KarhutlaLaporanStore.displayUrl(src) || src) : src;
+      return { src: shown, stored: src, name: String(src).split("/").pop().replace(/^idb:/, "") };
     });
     renderPhotos();
 
     activeIndex = index;
     if (index >= 0) {
       titleEl.textContent = "Ubah laporan";
-      hintEl.textContent = "Mengubah data yang sudah tersimpan. Setelah simpan, timpa laporan-data.js di folder project.";
+      hintEl.textContent = "Mengubah data yang sudah tersimpan. Klik Simpan.";
     } else {
       titleEl.textContent = "Laporan baru";
       hintEl.textContent = "Lengkapi data operasi. Kolom bertanda * wajib diisi.";
@@ -437,151 +430,17 @@
     return items.indexOf(report);
   }
 
-  function serializeStore() {
-    return "window.KARHUTLA_LAPORAN_DATA = " + JSON.stringify(dataStore(), null, 4) + ";\n";
-  }
-
-  async function ensureProjectDir() {
-    if (projectDirHandle) {
-      try {
-        await projectDirHandle.getFileHandle("laporan.html");
-        return projectDirHandle;
-      } catch (e) {
-        projectDirHandle = null;
-      }
+  async function persistStore() {
+    if (!window.KarhutlaLaporanStore) {
+      throw new Error("Modul simpan laporan belum termuat.");
     }
-    const handle = await window.showDirectoryPicker({
-      id: "karhutla-project",
-      mode: "readwrite"
-    });
-    try {
-      await handle.getFileHandle("laporan.html");
-    } catch (e) {
-      throw new Error("Pilih folder project KARHUTLA (yang berisi laporan.html).");
-    }
-    projectDirHandle = handle;
-    return handle;
-  }
-
-  async function writeProjectFiles(js) {
-    const pending = pendingPhotos.slice();
-    if (window.showDirectoryPicker) {
-      try {
-        const dir = await ensureProjectDir();
-        if (pending.length) {
-          const fotoDir = await dir.getDirectoryHandle("laporan-foto", { create: true });
-          for (let i = 0; i < pending.length; i += 1) {
-            const item = pending[i];
-            const fileHandle = await fotoDir.getFileHandle(item.name, { create: true });
-            const writable = await fileHandle.createWritable();
-            await writable.write(item.file);
-            await writable.close();
-          }
-        }
-        const jsHandle = await dir.getFileHandle("laporan-data.js", { create: true });
-        const jsWrite = await jsHandle.createWritable();
-        await jsWrite.write(js);
-        await jsWrite.close();
-        return pending.length ? "folder" : "folder-js";
-      } catch (err) {
-        if (err && err.name === "AbortError") throw err;
-        if (err && err.message && err.message.indexOf("Pilih folder") === 0) throw err;
-        projectDirHandle = null;
-      }
-    }
-    pending.forEach(function (item) {
-      downloadBlob(item.file, item.name);
-    });
-    return writeLaporanFile(js);
-  }
-
-  function settlePendingPhotos() {
-    existingPhotos = currentPhotoFiles().map(function (src) {
-      return { src: src, name: src.split("/").pop() };
-    });
-    clearPendingPhotos();
-    renderPhotos();
-  }
-
-  async function writeLaporanFile(js) {
-    if (window.showSaveFilePicker) {
-      try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: "laporan-data.js",
-          types: [{
-            description: "Laporan KARHUTLA",
-            accept: { "text/javascript": [".js"] }
-          }]
-        });
-        const writable = await handle.createWritable();
-        await writable.write(js);
-        await writable.close();
-        return "picker";
-      } catch (err) {
-        if (err && err.name === "AbortError") throw err;
-      }
-    }
-    const blob = new Blob([js], { type: "text/javascript;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "laporan-data.js";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    return "download";
-  }
-
-  async function saveViaPhp(report) {
-    const res = await fetch("save-laporan.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        index: activeIndex >= 0 ? activeIndex : null,
-        report: report
-      })
-    });
-    const json = await res.json().catch(function () { return null; });
-    if (!res.ok || !json || !json.ok) return null;
-    return json;
-  }
-
-  async function deleteViaPhp(index) {
-    const res = await fetch("save-laporan.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", index: index })
-    });
-    const json = await res.json().catch(function () { return null; });
-    if (!res.ok || !json || !json.ok) return null;
-    return json;
-  }
-
-  function removeFromStore(index) {
-    const store = dataStore();
-    if (index < 0 || index >= store.reports.length) return false;
-    store.reports.splice(index, 1);
-    store.total_reports = store.reports.length;
-    return true;
-  }
-
-  async function persistLocalFile() {
-    const mode = await writeProjectFiles(serializeStore());
-    settlePendingPhotos();
-    if (mode === "folder" || mode === "folder-js") {
-      setStatus("Tersimpan ke folder project. Total " + dataStore().total_reports + " laporan.", "is-ok");
-    } else if (mode === "picker") {
-      setStatus("Perubahan tersimpan ke laporan-data.js. Total " + dataStore().total_reports + " laporan.", "is-ok");
-    } else {
-      setStatus("File diunduh. Masukkan foto ke folder laporan-foto, lalu timpa laporan-data.js.", "is-ok");
-    }
+    return KarhutlaLaporanStore.save(dataStore());
   }
 
   async function deleteReport(index, rep) {
     const op = (rep && rep.operasi_karhutla) || {};
     const label = (rep && rep.sheet_name) || formatDateId(dayKey(op.tanggal)) || "laporan ini";
-    if (!window.confirm("Hapus \"" + label + "\" dari daftar?\n\nSetelah itu timpa laporan-data.js di folder project.")) {
+    if (!window.confirm("Hapus \"" + label + "\" dari daftar?")) {
       return;
     }
 
@@ -590,56 +449,31 @@
     const snapshot = store.reports.slice();
     const snapshotTotal = store.total_reports;
     try {
-      let phpResult = null;
-      try {
-        phpResult = await deleteViaPhp(index);
-      } catch (e) {
-        phpResult = null;
-      }
-
-      if (phpResult) {
-        window.KARHUTLA_LAPORAN_DATA = phpResult.data;
-        if (wasActive) resetForm();
-        else {
-          if (activeIndex > index) activeIndex -= 1;
-          renderList();
-        }
-        setStatus("Laporan dihapus. Total " + phpResult.total_reports + " laporan di laporan-data.js.", "is-ok");
-        return;
-      }
-
-      if (!removeFromStore(index)) {
+      if (index < 0 || index >= store.reports.length) {
         setStatus("Laporan tidak ditemukan.", "is-err");
         return;
       }
-      await persistLocalFile();
-      if (wasActive) {
-        form.reset();
-        fields.index.value = "";
-        fields.catatan.value = "";
-        activeIndex = -1;
-        titleEl.textContent = "Laporan baru";
-        hintEl.textContent = "Lengkapi data operasi. Kolom bertanda * wajib diisi.";
-      } else if (activeIndex > index) {
-        activeIndex -= 1;
+      store.reports.splice(index, 1);
+      store.total_reports = store.reports.length;
+      await persistStore();
+      if (wasActive) resetForm();
+      else {
+        if (activeIndex > index) activeIndex -= 1;
+        renderList();
       }
-      renderList();
+      setStatus("Laporan dihapus. Total " + store.total_reports + " laporan.", "is-ok");
     } catch (err) {
       store.reports = snapshot;
       store.total_reports = snapshotTotal;
       renderList();
-      if (err && err.name === "AbortError") {
-        setStatus("Penghapusan dibatalkan.", "is-err");
-        return;
-      }
       setStatus(err.message || "Gagal menghapus laporan.", "is-err");
     }
   }
 
   async function saveReport(event) {
     event.preventDefault();
-    const report = readForm();
-    if (!report.operasi_karhutla.tanggal || !report.operasi_karhutla.lokasi_pemadaman) {
+    const draft = readForm();
+    if (!draft.operasi_karhutla.tanggal || !draft.operasi_karhutla.lokasi_pemadaman) {
       setStatus("Tanggal dan lokasi pemadaman wajib diisi.", "is-err");
       return;
     }
@@ -647,39 +481,32 @@
     saveBtn.disabled = true;
     setStatus("Menyimpan laporan…");
 
+    const store = dataStore();
+    const snapshot = store.reports.slice();
+    const snapshotTotal = store.total_reports;
     try {
-      let phpResult = null;
-      try {
-        phpResult = await saveViaPhp(report);
-      } catch (e) {
-        phpResult = null;
-      }
-
-      if (phpResult) {
-        window.KARHUTLA_LAPORAN_DATA = phpResult.data;
-        if (pendingPhotos.length) {
-          await writeProjectFiles(serializeStore());
+      if (window.KarhutlaLaporanStore) {
+        for (let i = 0; i < pendingPhotos.length; i += 1) {
+          pendingPhotos[i].uploaded = await KarhutlaLaporanStore.uploadPhoto(
+            pendingPhotos[i].file,
+            pendingPhotos[i].name
+          );
         }
-        fillForm(phpResult.data.reports[phpResult.index], phpResult.index);
-        setStatus("Tersimpan. Total " + phpResult.total_reports + " laporan di laporan-data.js.", "is-ok");
-        return;
       }
-
+      const report = readForm();
       const index = applyReportToStore(report);
-      const mode = await writeProjectFiles(serializeStore());
+      const result = await persistStore();
       fillForm(reports()[index], index);
-      if (mode === "folder" || mode === "folder-js") {
-        setStatus("Tersimpan ke folder project. Total " + dataStore().total_reports + " laporan.", "is-ok");
-      } else if (mode === "picker") {
-        setStatus("Tersimpan ke laporan-data.js. Total " + dataStore().total_reports + " laporan.", "is-ok");
-      } else {
-        setStatus("File diunduh. Masukkan foto ke folder laporan-foto, lalu timpa laporan-data.js.", "is-ok");
-      }
+      const shared = result && result.persistent;
+      setStatus(
+        (shared ? "Tersimpan." : "Tersimpan di browser ini.") +
+        " Total " + dataStore().total_reports + " laporan.",
+        "is-ok"
+      );
     } catch (err) {
-      if (err && err.name === "AbortError") {
-        setStatus("Penyimpanan dibatalkan.", "is-err");
-        return;
-      }
+      store.reports = snapshot;
+      store.total_reports = snapshotTotal;
+      renderList();
       setStatus(err.message || "Gagal menyimpan laporan.", "is-err");
     } finally {
       saveBtn.disabled = false;
@@ -915,5 +742,14 @@
   searchEl.addEventListener("input", renderList);
   form.addEventListener("submit", saveReport);
 
-  resetForm();
+  function boot() {
+    resetForm();
+    renderList();
+  }
+
+  if (window.KarhutlaLaporanStore) {
+    KarhutlaLaporanStore.hydrate().then(boot).catch(boot);
+  } else {
+    boot();
+  }
 })();

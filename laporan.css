@@ -165,18 +165,21 @@ html:has(.page-laporan) {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .lp-item {
   display: flex;
+  flex: 0 0 auto;
   align-items: stretch;
   width: 100%;
+  min-height: 64px;
   text-align: left;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 10px;
-  background: rgba(255, 255, 255, .03);
+  background: rgba(255, 255, 255, .05);
   color: inherit;
   overflow: hidden;
   transition: border-color .2s ease, background .2s ease;
@@ -189,14 +192,14 @@ html:has(.page-laporan) {
 }
 
 .lp-item-main {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   display: block;
   text-align: left;
-  padding: 10px 11px;
+  padding: 12px 14px;
   border: 0;
   background: transparent;
-  color: inherit;
+  color: #f4f5f5;
   cursor: pointer;
 }
 
@@ -208,9 +211,9 @@ html:has(.page-laporan) {
 }
 
 .lp-item-btn {
-  flex: 1;
-  width: 36px;
-  min-height: 28px;
+  flex: 1 0 auto;
+  width: 40px;
+  min-height: 32px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -235,15 +238,18 @@ html:has(.page-laporan) {
 
 .lp-item strong {
   display: block;
-  font-size: 13px;
+  color: #fff;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 1.3;
 }
 
 .lp-item small {
   display: block;
-  margin-top: 3px;
-  color: #9aa2a4;
-  font-size: 11.5px;
+  margin-top: 4px;
+  color: #b7bcbd;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .lp-photos {
@@ -469,6 +475,12 @@ html:has(.page-laporan) {
 .lp-btn-download:hover {
   border-color: rgba(134, 209, 92, .9);
   background: rgba(107, 180, 67, .22);
+  color: #fff;
+}
+
+.lp-btn-download.is-linked {
+  border-color: rgba(134, 209, 92, .9);
+  background: rgba(107, 180, 67, .28);
   color: #fff;
 }
 
