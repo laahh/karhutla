@@ -55,5 +55,8 @@
     window.setTrendData(labels, internal, eksternal, active);
   }
 
-  refresh();
+  const ready = window.KarhutlaLaporanStore
+    ? KarhutlaLaporanStore.hydrate()
+    : Promise.resolve();
+  ready.then(refresh).catch(refresh);
 })();

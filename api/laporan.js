@@ -20,8 +20,20 @@ function parseSeed() {
     reports: []
   };
   try {
-    const file = path.join(process.cwd(), "laporan-data.js");
-    let raw = fs.readFileSync(file, "utf8");
+    const candidates = [
+      path.join(process.cwd(), "laporan-data.js"),
+      path.join(__dirname, "..", "laporan-data.js")
+    ];
+    let raw = "";
+    for (let i = 0; i < candidates.length; i += 1) {
+      try {
+        raw = fs.readFileSync(candidates[i], "utf8");
+        break;
+      } catch (err) {
+        raw = "";
+      }
+    }
+    if (!raw) return fallback;
     raw = raw.replace(/^\uFEFF/, "");
     raw = raw.replace(/^window\.KARHUTLA_LAPORAN_DATA\s*=\s*/, "");
     raw = raw.trim();

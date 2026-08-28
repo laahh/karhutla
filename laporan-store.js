@@ -252,22 +252,23 @@ window.KarhutlaLaporanStore = (function () {
     const packed = await compressPhoto(file);
     const photoFile = packed && packed.size ? packed : file;
 
-    if (persistent) {
-      try {
-        const data = await blobToBase64(photoFile);
-        const got = await fetchApi(PHOTO_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name || (file && file.name) || "foto.jpg",
-            type: photoFile.type || "image/jpeg",
-            data: data
-          })
-        });
-        if (got.json && got.json.ok && got.json.url) return got.json.url;
-      } catch (err) {
-        /* fall through to IndexedDB */
+    try {
+      const data = await blobToBase64(photoFile);
+      const got = await fetchApi(PHOTO_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name || (file && file.name) || "foto.jpg",
+          type: photoFile.type || "image/jpeg",
+          data: data
+        })
+      });
+      if (got.json && got.json.ok && got.json.url) {
+        persistent = true;
+        return got.json.url;
       }
+    } catch (err) {
+      /* fall through to IndexedDB */
     }
 
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
