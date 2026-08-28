@@ -204,15 +204,17 @@
               <textarea name="rencana" id="f-rencana" rows="3" placeholder="Kosongkan jika tidak ada"></textarea>
             </label>
             <div class="lp-grid lp-grid-2">
-              <label>
-                <span>Jumlah gambar tertanam</span>
-                <input type="number" name="jumlah_gambar" id="f-gambar" min="0" step="1" value="0">
-              </label>
-              <label>
-                <span>Catatan dokumentasi</span>
-                <input type="text" name="catatan_dok" id="f-catatan" value="Gambar tertanam tidak dienkode ke dalam JSON.">
+              <label class="lp-span-2">
+                <span>Foto dokumentasi</span>
+                <input type="file" id="f-fotos" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
               </label>
             </div>
+            <div class="lp-photos" id="lp-photos"></div>
+            <p class="lp-photo-hint">Gambar masuk ke folder <code>laporan-foto</code> di project. Saat simpan, pilih folder project (yang berisi laporan.html).</p>
+            <label>
+              <span>Catatan dokumentasi</span>
+              <input type="text" name="catatan_dok" id="f-catatan" placeholder="Opsional">
+            </label>
           </fieldset>
 
           <div class="lp-actions">

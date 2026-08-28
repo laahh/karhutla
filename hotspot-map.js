@@ -419,6 +419,9 @@
       rencana: dash(rep.rencana_kegiatan_besok),
       docsCount: docs.jumlah_gambar_tertanam,
       docsNote: dash(docs.catatan),
+      photos: Array.isArray(docs.files) ? docs.files.filter(function (src) {
+        return typeof src === "string" && src.indexOf("laporan-foto/") === 0;
+      }) : [],
       index: index,
       eksternal: typeof op.eksternal === "boolean" ? op.eksternal : null
     };
@@ -437,6 +440,10 @@
     }
     if (lap.site && lap.site !== "—") base.site = lap.site;
     if (typeof lap.eksternal === "boolean") base.eksternal = lap.eksternal;
+    if (lap.photos && lap.photos.length) {
+      base.media = base.media || {};
+      base.media.photos = lap.photos.slice();
+    }
     return base;
   }
 
@@ -506,7 +513,7 @@
           ? lap.eksternal
           : (hasCoord(lap) ? !insideIupk(lap.lat, lap.lng) : false),
         media: {
-          photos: randomFieldPhotos(),
+          photos: (lap.photos && lap.photos.length) ? lap.photos.slice() : randomFieldPhotos(),
           video: null
         }
       }, lap));

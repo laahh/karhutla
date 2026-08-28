@@ -36,10 +36,16 @@
     minusAlat: document.getElementById("f-minus-alat"),
     minusKonsumsi: document.getElementById("f-minus-konsumsi"),
     rencana: document.getElementById("f-rencana"),
-    gambar: document.getElementById("f-gambar"),
+    fotos: document.getElementById("f-fotos"),
     catatan: document.getElementById("f-catatan")
   };
 
+  const photosEl = document.getElementById("lp-photos");
+  const PHOTO_MAX = 12;
+  const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+  let existingPhotos = [];
+  let pendingPhotos = [];
+  let projectDirHandle = null;
   let activeIndex = -1;
 
   function dataStore() {
@@ -120,6 +126,105 @@
     if (kind) statusEl.classList.add(kind);
   }
 
+  function revokePreview(item) {
+    if (item && item.preview) URL.revokeObjectURL(item.preview);
+  }
+
+  function clearPendingPhotos() {
+    pendingPhotos.forEach(revokePreview);
+    pendingPhotos = [];
+    if (fields.fotos) fields.fotos.value = "";
+  }
+
+  function currentPhotoFiles() {
+    return existingPhotos.map(function (item) { return item.src; }).concat(
+      pendingPhotos.map(function (item) { return "laporan-foto/" + item.name; })
+    );
+  }
+
+  function safePhotoName(file) {
+    const extMatch = String(file && file.name || "").match(/\.(jpe?g|png|webp|gif)$/i);
+    const ext = extMatch ? extMatch[0].toLowerCase().replace("jpeg", "jpg") : ".jpg";
+    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const rand = Math.random().toString(36).slice(2, 8);
+    return stamp + "-" + rand + ext;
+  }
+
+  function renderPhotos() {
+    if (!photosEl) return;
+    photosEl.innerHTML = "";
+    const all = existingPhotos.map(function (item, i) {
+      return { kind: "existing", index: i, src: item.src, label: item.name };
+    }).concat(pendingPhotos.map(function (item, i) {
+      return { kind: "pending", index: i, src: item.preview, label: item.name };
+    }));
+    if (!all.length) {
+      const empty = document.createElement("p");
+      empty.className = "lp-photos-empty";
+      empty.textContent = "Belum ada foto.";
+      photosEl.appendChild(empty);
+      return;
+    }
+    all.forEach(function (item) {
+      const card = document.createElement("figure");
+      card.className = "lp-photo";
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.alt = item.label;
+      const cap = document.createElement("figcaption");
+      cap.textContent = item.label;
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "lp-photo-del";
+      del.setAttribute("aria-label", "Hapus foto");
+      del.textContent = "×";
+      del.addEventListener("click", function () {
+        if (item.kind === "existing") existingPhotos.splice(item.index, 1);
+        else {
+          revokePreview(pendingPhotos[item.index]);
+          pendingPhotos.splice(item.index, 1);
+        }
+        renderPhotos();
+      });
+      card.appendChild(img);
+      card.appendChild(cap);
+      card.appendChild(del);
+      photosEl.appendChild(card);
+    });
+  }
+
+  function addPhotoFiles(fileList) {
+    const incoming = Array.prototype.slice.call(fileList || []);
+    incoming.forEach(function (file) {
+      if (!file || String(file.type || "").indexOf("image/") !== 0) return;
+      if (file.size > PHOTO_MAX_BYTES) {
+        setStatus("Lewati " + file.name + " (lebih dari 8 MB).", "is-err");
+        return;
+      }
+      if (existingPhotos.length + pendingPhotos.length >= PHOTO_MAX) {
+        setStatus("Maksimal " + PHOTO_MAX + " foto per laporan.", "is-err");
+        return;
+      }
+      pendingPhotos.push({
+        file: file,
+        name: safePhotoName(file),
+        preview: URL.createObjectURL(file)
+      });
+    });
+    renderPhotos();
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
   function fillForm(rep, index) {
     const op = (rep && rep.operasi_karhutla) || {};
     const tim = op.jumlah_tim || {};
@@ -151,8 +256,14 @@
     fields.minusAlat.value = text(minus.peralatan_yang_digunakan);
     fields.minusKonsumsi.value = text(minus.konsumsi);
     fields.rencana.value = text(rep && rep.rencana_kegiatan_besok);
-    fields.gambar.value = docs.jumlah_gambar_tertanam != null ? docs.jumlah_gambar_tertanam : 0;
-    fields.catatan.value = text(docs.catatan) || "Gambar tertanam tidak dienkode ke dalam JSON.";
+    fields.catatan.value = text(docs.catatan);
+    clearPendingPhotos();
+    existingPhotos = (Array.isArray(docs.files) ? docs.files : []).filter(function (src) {
+      return typeof src === "string" && src.indexOf("laporan-foto/") === 0;
+    }).map(function (src) {
+      return { src: src, name: src.split("/").pop() };
+    });
+    renderPhotos();
 
     activeIndex = index;
     if (index >= 0) {
@@ -168,8 +279,7 @@
   function resetForm() {
     form.reset();
     fields.index.value = "";
-    fields.gambar.value = "0";
-    fields.catatan.value = "Gambar tertanam tidak dienkode ke dalam JSON.";
+    fields.catatan.value = "";
     fillForm(null, -1);
     setStatus("");
   }
@@ -211,8 +321,9 @@
       },
       rencana_kegiatan_besok: emptyToNull(fields.rencana.value),
       dokumentasi: {
-        jumlah_gambar_tertanam: Number(fields.gambar.value || 0),
-        catatan: emptyToNull(fields.catatan.value) || "Gambar tertanam tidak dienkode ke dalam JSON."
+        jumlah_gambar_tertanam: currentPhotoFiles().length,
+        files: currentPhotoFiles(),
+        catatan: emptyToNull(fields.catatan.value)
       }
     };
   }
@@ -330,6 +441,68 @@
     return "window.KARHUTLA_LAPORAN_DATA = " + JSON.stringify(dataStore(), null, 4) + ";\n";
   }
 
+  async function ensureProjectDir() {
+    if (projectDirHandle) {
+      try {
+        await projectDirHandle.getFileHandle("laporan.html");
+        return projectDirHandle;
+      } catch (e) {
+        projectDirHandle = null;
+      }
+    }
+    const handle = await window.showDirectoryPicker({
+      id: "karhutla-project",
+      mode: "readwrite"
+    });
+    try {
+      await handle.getFileHandle("laporan.html");
+    } catch (e) {
+      throw new Error("Pilih folder project KARHUTLA (yang berisi laporan.html).");
+    }
+    projectDirHandle = handle;
+    return handle;
+  }
+
+  async function writeProjectFiles(js) {
+    const pending = pendingPhotos.slice();
+    if (window.showDirectoryPicker) {
+      try {
+        const dir = await ensureProjectDir();
+        if (pending.length) {
+          const fotoDir = await dir.getDirectoryHandle("laporan-foto", { create: true });
+          for (let i = 0; i < pending.length; i += 1) {
+            const item = pending[i];
+            const fileHandle = await fotoDir.getFileHandle(item.name, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(item.file);
+            await writable.close();
+          }
+        }
+        const jsHandle = await dir.getFileHandle("laporan-data.js", { create: true });
+        const jsWrite = await jsHandle.createWritable();
+        await jsWrite.write(js);
+        await jsWrite.close();
+        return pending.length ? "folder" : "folder-js";
+      } catch (err) {
+        if (err && err.name === "AbortError") throw err;
+        if (err && err.message && err.message.indexOf("Pilih folder") === 0) throw err;
+        projectDirHandle = null;
+      }
+    }
+    pending.forEach(function (item) {
+      downloadBlob(item.file, item.name);
+    });
+    return writeLaporanFile(js);
+  }
+
+  function settlePendingPhotos() {
+    existingPhotos = currentPhotoFiles().map(function (src) {
+      return { src: src, name: src.split("/").pop() };
+    });
+    clearPendingPhotos();
+    renderPhotos();
+  }
+
   async function writeLaporanFile(js) {
     if (window.showSaveFilePicker) {
       try {
@@ -394,11 +567,14 @@
   }
 
   async function persistLocalFile() {
-    const mode = await writeLaporanFile(serializeStore());
-    if (mode === "picker") {
+    const mode = await writeProjectFiles(serializeStore());
+    settlePendingPhotos();
+    if (mode === "folder" || mode === "folder-js") {
+      setStatus("Tersimpan ke folder project. Total " + dataStore().total_reports + " laporan.", "is-ok");
+    } else if (mode === "picker") {
       setStatus("Perubahan tersimpan ke laporan-data.js. Total " + dataStore().total_reports + " laporan.", "is-ok");
     } else {
-      setStatus("File laporan-data.js diunduh. Timpa file dengan nama sama di folder project.", "is-ok");
+      setStatus("File diunduh. Masukkan foto ke folder laporan-foto, lalu timpa laporan-data.js.", "is-ok");
     }
   }
 
@@ -440,8 +616,7 @@
       if (wasActive) {
         form.reset();
         fields.index.value = "";
-        fields.gambar.value = "0";
-        fields.catatan.value = "Gambar tertanam tidak dienkode ke dalam JSON.";
+        fields.catatan.value = "";
         activeIndex = -1;
         titleEl.textContent = "Laporan baru";
         hintEl.textContent = "Lengkapi data operasi. Kolom bertanda * wajib diisi.";
@@ -482,18 +657,23 @@
 
       if (phpResult) {
         window.KARHUTLA_LAPORAN_DATA = phpResult.data;
+        if (pendingPhotos.length) {
+          await writeProjectFiles(serializeStore());
+        }
         fillForm(phpResult.data.reports[phpResult.index], phpResult.index);
         setStatus("Tersimpan. Total " + phpResult.total_reports + " laporan di laporan-data.js.", "is-ok");
         return;
       }
 
       const index = applyReportToStore(report);
-      const mode = await writeLaporanFile(serializeStore());
+      const mode = await writeProjectFiles(serializeStore());
       fillForm(reports()[index], index);
-      if (mode === "picker") {
+      if (mode === "folder" || mode === "folder-js") {
+        setStatus("Tersimpan ke folder project. Total " + dataStore().total_reports + " laporan.", "is-ok");
+      } else if (mode === "picker") {
         setStatus("Tersimpan ke laporan-data.js. Total " + dataStore().total_reports + " laporan.", "is-ok");
       } else {
-        setStatus("File laporan-data.js diunduh. Timpa file dengan nama sama di folder project.", "is-ok");
+        setStatus("File diunduh. Masukkan foto ke folder laporan-foto, lalu timpa laporan-data.js.", "is-ok");
       }
     } catch (err) {
       if (err && err.name === "AbortError") {
@@ -542,7 +722,8 @@
       minusAlat: dash(minus.peralatan_yang_digunakan),
       minusKonsumsi: dash(minus.konsumsi),
       rencana: dash(rep && rep.rencana_kegiatan_besok),
-      gambar: docs.jumlah_gambar_tertanam != null ? docs.jumlah_gambar_tertanam : "",
+      gambar: Array.isArray(docs.files) ? docs.files.length : (docs.jumlah_gambar_tertanam != null ? docs.jumlah_gambar_tertanam : ""),
+      foto: Array.isArray(docs.files) ? docs.files.join(", ") : "",
       catatan: dash(docs.catatan)
     };
   }
@@ -585,6 +766,7 @@
       ["RENCANA & DOKUMENTASI"],
       ["Rencana kegiatan besok", r.rencana],
       ["Jumlah gambar tertanam", r.gambar],
+      ["File foto", r.foto],
       ["Catatan dokumentasi", r.catatan]
     ];
   }
@@ -719,6 +901,12 @@
     if (activeIndex >= 0) return;
     fields.sheet.value = suggestSheetName(fields.tanggal.value, activeIndex);
   });
+  if (fields.fotos) {
+    fields.fotos.addEventListener("change", function () {
+      addPhotoFiles(fields.fotos.files);
+      fields.fotos.value = "";
+    });
+  }
 
   document.getElementById("lp-new").addEventListener("click", resetForm);
   document.getElementById("lp-reset").addEventListener("click", resetForm);

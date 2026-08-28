@@ -95,6 +95,20 @@ function bool_field($source, $key) {
     return $text === '1' || $text === 'true' || $text === 'eksternal';
 }
 
+function files_field($source) {
+    $out = array();
+    if (!isset($source['files']) || !is_array($source['files'])) {
+        return $out;
+    }
+    foreach ($source['files'] as $file) {
+        $path = blank_to_null($file);
+        if ($path && preg_match('#^laporan-foto/[A-Za-z0-9._-]+$#', $path)) {
+            $out[] = $path;
+        }
+    }
+    return $out;
+}
+
 function normalize_report($input) {
     $opIn = isset($input['operasi_karhutla']) && is_array($input['operasi_karhutla'])
         ? $input['operasi_karhutla'] : array();
@@ -115,9 +129,10 @@ function normalize_report($input) {
         return null;
     }
 
-    $catatan = str_field($docIn, 'catatan');
-    if ($catatan === null) {
-        $catatan = 'Gambar tertanam tidak dienkode ke dalam JSON.';
+    $files = files_field($docIn);
+    $jumlah = count($files);
+    if (!$jumlah) {
+        $jumlah = int_field($docIn, 'jumlah_gambar_tertanam', 0);
     }
 
     return array(
@@ -154,7 +169,8 @@ function normalize_report($input) {
         ),
         'rencana_kegiatan_besok' => str_field($input, 'rencana_kegiatan_besok'),
         'dokumentasi' => array(
-            'jumlah_gambar_tertanam' => int_field($docIn, 'jumlah_gambar_tertanam', 0),
+            'jumlah_gambar_tertanam' => $jumlah,
+            'files' => $files,
             'catatan' => $catatan,
         ),
     );

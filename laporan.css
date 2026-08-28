@@ -246,6 +246,71 @@ html:has(.page-laporan) {
   font-size: 11.5px;
 }
 
+.lp-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.lp-photos-empty {
+  margin: 0;
+  color: #9aa2a4;
+  font-size: 12.5px;
+}
+
+.lp-photo {
+  position: relative;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .35);
+}
+
+.lp-photo img {
+  display: block;
+  width: 100%;
+  height: 78px;
+  object-fit: cover;
+}
+
+.lp-photo figcaption {
+  padding: 4px 6px;
+  color: #c5c9ca;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-photo-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .7);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lp-photo-hint {
+  margin: 0 0 10px;
+  color: #9aa2a4;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.lp-form-card input[type="file"] {
+  padding: 8px;
+}
+
 .lp-empty {
   margin: 18px 8px;
   color: #9aa2a4;
