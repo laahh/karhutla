@@ -1,6 +1,37 @@
 (function () {
   if (!window.KarhutlaData || typeof window.setTrendData !== "function") return;
   const KD = window.KarhutlaData;
+  const STORAGE_KEY = "karhutla-trend-span";
+  const RANGE_DAYS = { "7": 7, "10": 10, "30": 30 };
+  let spanDays = 10;
+  let refreshSeq = 0;
+
+  function readSavedSpan() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (RANGE_DAYS[raw]) return RANGE_DAYS[raw];
+    } catch (err) {
+      /* ignore */
+    }
+    return 10;
+  }
+
+  function saveSpan(days) {
+    try { localStorage.setItem(STORAGE_KEY, String(days)); } catch (err) { /* ignore */ }
+  }
+
+  function syncRangeButtons() {
+    document.querySelectorAll(".trend-range-btn").forEach(function (btn) {
+      const days = RANGE_DAYS[btn.getAttribute("data-range")];
+      btn.classList.toggle("is-on", days === spanDays);
+    });
+  }
+
+  function setRangeBusy(busy) {
+    document.querySelectorAll(".trend-range-btn").forEach(function (btn) {
+      btn.disabled = !!busy;
+    });
+  }
 
   function laporanDateKeys() {
     const keys = {};
@@ -38,7 +69,7 @@
     const today = KD.todayKey();
     const latest = sorted.length ? sorted[sorted.length - 1] : today;
     const end = maxKey(latest, today);
-    return buildDateRange(addDays(end, -9), end);
+    return buildDateRange(addDays(end, -(spanDays - 1)), end);
   }
 
   function buildDateRange(from, to) {
@@ -61,47 +92,63 @@
   }
 
   async function refresh() {
-    const cases = KD.loadMergedCases();
-    const dateKeys = axisDateKeys(cases);
-    if (!dateKeys.length) return;
-    const labels = dateKeys.map(labelFor);
-    const chartEl = document.getElementById("trend-chart");
-    if (chartEl) {
-      chartEl.setAttribute(
-        "aria-label",
-        "Grafik tren hotspot dan karhutla " + labels[0] + " sampai " + labels[labels.length - 1]
-      );
+    const seq = ++refreshSeq;
+    setRangeBusy(true);
+    try {
+      const cases = KD.loadMergedCases();
+      const dateKeys = axisDateKeys(cases);
+      if (!dateKeys.length) return;
+      const labels = dateKeys.map(labelFor);
+      const chartEl = document.getElementById("trend-chart");
+      if (chartEl) {
+        chartEl.setAttribute(
+          "aria-label",
+          "Grafik tren hotspot dan karhutla " + labels[0] + " sampai " + labels[labels.length - 1]
+        );
+      }
+      const internal = dateKeys.map(function (key) {
+        return cases.filter(function (c) { return c.tanggal === key && !c.eksternal; }).length;
+      });
+      const eksternal = dateKeys.map(function (key) {
+        return cases.filter(function (c) { return c.tanggal === key && c.eksternal; }).length;
+      });
+
+      const perDay = [];
+      for (let i = 0; i < dateKeys.length; i += 3) {
+        if (seq !== refreshSeq) return;
+        const slice = dateKeys.slice(i, i + 3);
+        const part = await Promise.all(slice.map(function (key) {
+          return KD.fetchSipongi(key, key);
+        }));
+        for (let p = 0; p < part.length; p += 1) perDay.push(part[p]);
+      }
+
+      if (seq !== refreshSeq) return;
+
+      if (perDay.every(function (features) { return features == null; })) {
+        window.setTrendData(labels, internal, eksternal, null);
+        return;
+      }
+
+      const active = perDay.map(function (features) { return features ? features.length : 0; });
+      window.setTrendData(labels, internal, eksternal, active);
+    } finally {
+      if (seq === refreshSeq) setRangeBusy(false);
     }
-    const internal = dateKeys.map(function (key) {
-      return cases.filter(function (c) { return c.tanggal === key && !c.eksternal; }).length;
-    });
-    const eksternal = dateKeys.map(function (key) {
-      return cases.filter(function (c) { return c.tanggal === key && c.eksternal; }).length;
-    });
-
-    // Query SiPongi once per day (same single-day from=to=day request
-    // hotspot.html issues when you pick that date), run in parallel, so the
-    // count for each day is guaranteed identical to what hotspot.html shows
-    // for that same day — not a range query bucketed on our own.
-    const perDay = [];
-    for (let i = 0; i < dateKeys.length; i += 3) {
-      const slice = dateKeys.slice(i, i + 3);
-      const part = await Promise.all(slice.map(function (key) {
-        return KD.fetchSipongi(key, key);
-      }));
-      for (let p = 0; p < part.length; p += 1) perDay.push(part[p]);
-    }
-
-    if (perDay.every(function (features) { return features == null; })) {
-      // No live SiPongi data available at all — still show real case counts for the bars.
-      window.setTrendData(labels, internal, eksternal, null);
-      return;
-    }
-
-    const active = perDay.map(function (features) { return features ? features.length : 0; });
-
-    window.setTrendData(labels, internal, eksternal, active);
   }
+
+  spanDays = readSavedSpan();
+  syncRangeButtons();
+  document.querySelectorAll(".trend-range-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const days = RANGE_DAYS[btn.getAttribute("data-range")];
+      if (!days || days === spanDays) return;
+      spanDays = days;
+      saveSpan(days);
+      syncRangeButtons();
+      refresh();
+    });
+  });
 
   const ready = window.KarhutlaLaporanStore
     ? KarhutlaLaporanStore.hydrate()

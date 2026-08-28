@@ -107,7 +107,10 @@
         bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (bx + barW / 2) + '" y="' + (yTotalTop + (yInternalTop - yTotalTop) / 2 + 3) + '">' + external + '</text>';
       }
 
-      xLabels += '<text class="x-label" x="' + (gx + groupW / 2) + '" y="' + (H - 6) + '">' + TREND_LABELS[i] + '</text>';
+      const showLabel = n <= 12 || i === 0 || i === n - 1 || i % (n > 20 ? 3 : 2) === 0;
+      if (showLabel) {
+        xLabels += '<text class="x-label" x="' + (gx + groupW / 2) + '" y="' + (H - 6) + '">' + TREND_LABELS[i] + '</text>';
+      }
 
       const lineVal = TREND_ACTIVE ? TREND_ACTIVE[i] : total;
       const lx = gx + groupW / 2;
