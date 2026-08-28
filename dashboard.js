@@ -65,7 +65,7 @@
       ? Math.max(100, Math.ceil(Math.max.apply(null, TREND_ACTIVE) / 100) * 100)
       : 700;
     const groupW = plotW / n;
-    const barW = groupW * 0.5;
+    const barW = Math.min(groupW * 0.62, 42);
 
     const yPix = function (v) { return MT + plotH - (v / yMax) * plotH; };
     const yPixActive = function (v) { return MT + plotH - (v / activeMax) * plotH; };

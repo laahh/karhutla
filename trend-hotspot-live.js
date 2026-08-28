@@ -13,9 +13,9 @@
     return Object.keys(keys).sort();
   }
 
-  function addMonths(key, delta) {
+  function addDays(key, delta) {
     const d = new Date(key + "T00:00:00");
-    d.setMonth(d.getMonth() + delta);
+    d.setDate(d.getDate() + delta);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
@@ -38,8 +38,7 @@
     const today = KD.todayKey();
     const latest = sorted.length ? sorted[sorted.length - 1] : today;
     const end = maxKey(latest, today);
-    const from = addMonths(end, -1);
-    return buildDateRange(from, end);
+    return buildDateRange(addDays(end, -9), end);
   }
 
   function buildDateRange(from, to) {
@@ -84,9 +83,14 @@
     // hotspot.html issues when you pick that date), run in parallel, so the
     // count for each day is guaranteed identical to what hotspot.html shows
     // for that same day — not a range query bucketed on our own.
-    const perDay = await Promise.all(dateKeys.map(function (key) {
-      return KD.fetchSipongi(key, key);
-    }));
+    const perDay = [];
+    for (let i = 0; i < dateKeys.length; i += 3) {
+      const slice = dateKeys.slice(i, i + 3);
+      const part = await Promise.all(slice.map(function (key) {
+        return KD.fetchSipongi(key, key);
+      }));
+      for (let p = 0; p < part.length; p += 1) perDay.push(part[p]);
+    }
 
     if (perDay.every(function (features) { return features == null; })) {
       // No live SiPongi data available at all — still show real case counts for the bars.
