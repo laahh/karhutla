@@ -13,6 +13,21 @@
     return Object.keys(keys).sort();
   }
 
+  function addMonths(key, delta) {
+    const d = new Date(key + "T00:00:00");
+    d.setMonth(d.getMonth() + delta);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+  function maxKey(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    return a >= b ? a : b;
+  }
+
   function axisDateKeys(cases) {
     const keys = {};
     (cases || []).forEach(function (c) {
@@ -20,8 +35,11 @@
     });
     laporanDateKeys().forEach(function (key) { keys[key] = true; });
     const sorted = Object.keys(keys).sort();
-    if (!sorted.length) return [];
-    return buildDateRange(sorted[0], sorted[sorted.length - 1]);
+    const today = KD.todayKey();
+    const latest = sorted.length ? sorted[sorted.length - 1] : today;
+    const end = maxKey(latest, today);
+    const from = addMonths(end, -1);
+    return buildDateRange(from, end);
   }
 
   function buildDateRange(from, to) {
