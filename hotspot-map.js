@@ -37,6 +37,9 @@
   const listEl = document.getElementById("hotspot-list");
   const countEl = document.getElementById("list-count");
   const dateStrip = document.getElementById("date-strip");
+  const hourFilter = document.getElementById("hour-filter");
+  const hourStrip = document.getElementById("hour-strip");
+  const listLabel = document.getElementById("list-label");
   const emptyEl = document.getElementById("detail-empty");
   const cardEl = document.getElementById("detail-card");
   const detailPane = document.getElementById("map-detail");
@@ -54,6 +57,7 @@
   let DATE_KEYS = [];
   let selectedId = null;
   let selectedDay = "today";
+  let selectedHour = "all";
   let scope = "semua";
   let showKasus = true;
   let showSipongi = true;
@@ -151,12 +155,18 @@
         hour12: false,
         timeZone: "Asia/Makassar"
       });
+      const hourPart = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        hourCycle: "h23",
+        timeZone: "Asia/Makassar"
+      }).formatToParts(d).find(function (part) { return part.type === "hour"; });
       return {
         iso: d.toISOString(),
         dateLabel: dateLabel,
         timeLabel: timeLabel + " WITA",
         shortTime: timeLabel + " WITA",
-        full: dateLabel + " · " + timeLabel + " WITA"
+        full: dateLabel + " · " + timeLabel + " WITA",
+        hour: hourPart ? Number(hourPart.value) : -1
       };
     }
     const raw = String(p.date_hotspot || "").trim();
@@ -166,7 +176,8 @@
       dateLabel: raw || "—",
       timeLabel: m ? m[1] + " WITA" : "—",
       shortTime: m ? m[1] + " WITA" : "—",
-      full: raw || "—"
+      full: raw || "—",
+      hour: m ? Number(m[1].split(":")[0]) : -1
     };
   }
 
@@ -175,6 +186,32 @@
     const d = new Date(key + "T00:00:00");
     if (Number.isNaN(d.getTime())) return key;
     return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  }
+
+  function hourKeyOf(item) {
+    return item.detectedHour < 0 || item.detectedHour == null ? "none" : String(item.detectedHour);
+  }
+
+  function hourChipLabel(key) {
+    if (key === "all") return "Semua";
+    if (key === "none") return "Tanpa jam";
+    return String(Number(key)).padStart(2, "0") + ":00";
+  }
+
+  function visibleHotspots() {
+    if (!showSipongi) return [];
+    if (selectedHour === "all") return HOTSPOTS;
+    return HOTSPOTS.filter(function (item) {
+      return hourKeyOf(item) === selectedHour;
+    });
+  }
+
+  function clampHourFilter() {
+    if (selectedHour === "all") return;
+    const still = HOTSPOTS.some(function (item) {
+      return hourKeyOf(item) === selectedHour;
+    });
+    if (!still) selectedHour = "all";
   }
 
   function activeDayKey() {
@@ -407,6 +444,7 @@
       detectedTime: when.timeLabel,
       detectedShort: when.shortTime,
       detectedIso: when.iso,
+      detectedHour: when.hour,
       desa: p.desa || "—",
       kec: p.kecamatan || "—",
       kab: p.kabkota || "—",
@@ -661,26 +699,68 @@
     }).join("");
   }
 
+  function renderHourStrip() {
+    if (!hourStrip) return;
+    if (!HOTSPOTS.length || !showSipongi) {
+      if (hourFilter) hourFilter.hidden = true;
+      hourStrip.innerHTML = "";
+      return;
+    }
+    if (hourFilter) hourFilter.hidden = false;
+    const counts = {};
+    HOTSPOTS.forEach(function (item) {
+      const key = hourKeyOf(item);
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    const keys = Object.keys(counts).sort(function (a, b) {
+      if (a === "none") return 1;
+      if (b === "none") return -1;
+      return Number(a) - Number(b);
+    });
+    const chips = [{ key: "all", n: HOTSPOTS.length }].concat(keys.map(function (key) {
+      return { key: key, n: counts[key] };
+    }));
+    hourStrip.innerHTML = chips.map(function (chip) {
+      const on = chip.key === selectedHour ? " is-on" : "";
+      return '<button type="button" class="date-chip' + on + '" data-hour="' + chip.key + '">' +
+        esc(hourChipLabel(chip.key)) + "<i>" + chip.n + "</i></button>";
+    }).join("");
+  }
+
   function renderSummary() {
     const cases = CASES.filter(function (c) { return c.tanggal === activeDayKey(); });
     const internal = cases.filter(function (c) { return !c.eksternal; }).length;
     const eksternal = cases.filter(function (c) { return c.eksternal; }).length;
-    sumSipongi.textContent = String(HOTSPOTS.length);
+    const spots = visibleHotspots();
+    const sipongiShown = showSipongi ? spots.length : 0;
+    const sipongiAll = HOTSPOTS.length;
+    sumSipongi.textContent = selectedHour === "all" || !showSipongi
+      ? String(sipongiAll)
+      : String(sipongiShown);
     sumInternal.textContent = String(internal);
     sumEksternal.textContent = String(eksternal);
     const label = selectedDay === "today" ? "Hari ini (24 jam)" : formatDate(selectedDay);
-    sourceEl.textContent = "Berau · " + label + " · SiPongi " + HOTSPOTS.length + " · Internal " + internal + " · Eksternal " + eksternal +
+    const hourBit = selectedHour === "all" ? "" : " · jam " + hourChipLabel(selectedHour) + " WITA";
+    const sipongiBit = selectedHour === "all" || !showSipongi
+      ? "SiPongi " + sipongiAll
+      : "SiPongi " + sipongiShown + " dari " + sipongiAll;
+    sourceEl.textContent = "Berau · " + label + hourBit + " · " + sipongiBit + " · Internal " + internal + " · Eksternal " + eksternal +
       (lastFetchAt ? " · " + lastFetchAt.toLocaleTimeString("id-ID") : "");
     liveStatus.textContent = cases.length
       ? (internal + " respon internal, " + eksternal + " eksternal")
-      : (HOTSPOTS.length ? HOTSPOTS.length + " hotspot SiPongi, belum ada penanganan terverifikasi" : "Tidak ada titik pada tanggal ini");
+      : (sipongiShown
+        ? sipongiShown + " hotspot SiPongi" + (selectedHour === "all" ? "" : " jam " + hourChipLabel(selectedHour)) + ", belum ada penanganan terverifikasi"
+        : "Tidak ada titik pada " + (selectedHour === "all" ? "tanggal ini" : "jam ini"));
   }
 
   function renderList() {
     const cases = dayCases();
-    const spots = showSipongi ? HOTSPOTS : [];
+    const spots = visibleHotspots();
     const total = spots.length + cases.length;
     countEl.textContent = String(total);
+    if (listLabel) {
+      listLabel.textContent = selectedHour === "all" ? "titik di tanggal ini" : "titik di jam " + hourChipLabel(selectedHour);
+    }
     let html = "";
     if (spots.length) {
       html += '<p class="list-group">Hotspot satelit</p>';
@@ -709,7 +789,7 @@
         );
       }).join("");
     }
-    listEl.innerHTML = html || '<p class="demo-note">Tidak ada hotspot atau penanganan pada tanggal ini.</p>';
+    listEl.innerHTML = html || '<p class="demo-note">Tidak ada hotspot atau penanganan pada ' + (selectedHour === "all" ? "tanggal ini" : "jam ini") + ".</p>";
   }
 
   function renderMarkers() {
@@ -718,7 +798,7 @@
       delete markers[id];
     });
     if (!showSipongi) return;
-    HOTSPOTS.forEach(function (item) {
+    visibleHotspots().forEach(function (item) {
       const marker = L.marker([item.lat, item.lng], {
         icon: markerIcon(item.level, item.id === selectedId),
         title: item.name + " · " + (item.detectedShort || item.detected),
@@ -906,7 +986,14 @@
   }
 
   function paint() {
+    clampHourFilter();
+    const visibleIds = {};
+    visibleHotspots().forEach(function (item) { visibleIds[item.id] = true; });
+    if (selectedId && HOTSPOTS.some(function (row) { return row.id === selectedId; }) && !visibleIds[selectedId]) {
+      selectedId = null;
+    }
     renderDateStrip();
+    renderHourStrip();
     renderSummary();
     renderList();
     renderMarkers();
@@ -931,6 +1018,7 @@
 
   function setDay(key) {
     selectedDay = key;
+    selectedHour = "all";
     selectedId = null;
     renderDateStrip();
     loadHotspots();
@@ -941,6 +1029,17 @@
     if (!btn) return;
     setDay(btn.getAttribute("data-day"));
   });
+
+  if (hourStrip) {
+    hourStrip.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-hour]");
+      if (!btn) return;
+      selectedHour = btn.getAttribute("data-hour") || "all";
+      selectedId = null;
+      paint();
+      fitDay();
+    });
+  }
 
   document.querySelectorAll("[data-scope]").forEach(function (btn) {
     btn.addEventListener("click", function () {

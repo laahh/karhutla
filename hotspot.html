@@ -92,6 +92,11 @@
         </article>
       </div>
 
+      <div class="hour-filter" id="hour-filter" hidden>
+        <p class="hour-label">Jam muncul (WITA)</p>
+        <div class="hour-strip date-strip" id="hour-strip" role="tablist" aria-label="Filter jam muncul"></div>
+      </div>
+
       <div class="scope-tabs" role="group" aria-label="Filter penanganan">
         <button type="button" class="is-on" data-scope="semua">Semua</button>
         <button type="button" data-scope="internal">Internal</button>
@@ -105,7 +110,7 @@
 
       <div class="list-meta">
         <strong id="list-count">0</strong>
-        <span>titik di tanggal ini</span>
+        <span id="list-label">titik di tanggal ini</span>
         <button type="button" id="btn-refresh" class="refresh-btn">Muat SiPongi</button>
       </div>
       <div class="hotspot-list" id="hotspot-list"></div>
