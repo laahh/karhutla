@@ -78,7 +78,20 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
 }
 
-.leaflet-tooltip.iupk-tip::before { border-top-color: rgba(7, 12, 9, .92); }
+.leaflet-tooltip.sipongi-tip {
+  padding: 6px 8px;
+  border: 1px solid rgba(239, 90, 54, .45);
+  border-radius: 8px;
+  background: rgba(7, 12, 9, .92);
+  color: #e8eceb;
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
+}
+
+.leaflet-tooltip.sipongi-tip::before { border-top-color: rgba(7, 12, 9, .92); }
 
 .glass-panel {
   position: absolute;

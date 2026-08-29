@@ -134,6 +134,42 @@
     return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
   }
 
+  function sipongiTime(p) {
+    const iso = p.date_hotspot_ori || p.hs_id || "";
+    const d = new Date(iso);
+    if (!Number.isNaN(d.getTime()) && iso) {
+      const dateLabel = d.toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Makassar"
+      });
+      const timeLabel = d.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Makassar"
+      });
+      return {
+        iso: d.toISOString(),
+        dateLabel: dateLabel,
+        timeLabel: timeLabel + " WITA",
+        shortTime: timeLabel + " WITA",
+        full: dateLabel + " · " + timeLabel + " WITA"
+      };
+    }
+    const raw = String(p.date_hotspot || "").trim();
+    const m = raw.match(/(\d{1,2}:\d{2})(?::\d{2})?/);
+    return {
+      iso: "",
+      dateLabel: raw || "—",
+      timeLabel: m ? m[1] + " WITA" : "—",
+      shortTime: m ? m[1] + " WITA" : "—",
+      full: raw || "—"
+    };
+  }
+
   function chipLabel(key) {
     if (key === "today") return "Hari ini";
     const d = new Date(key + "T00:00:00");
@@ -353,6 +389,7 @@
     const conf = (p.confidence_level || "low").toLowerCase();
     const lat = Number(p.lat != null ? p.lat : g[1]);
     const lng = Number(p.long != null ? p.long : g[0]);
+    const when = sipongiTime(p);
     return {
       kind: "sipongi",
       id: [p.sumber, lat, lng, p.date_hotspot_ori || p.hs_id, index].join("_"),
@@ -365,7 +402,11 @@
       conf: conf,
       level: levelOf(conf),
       confidence: Number(p.confidence) || 0,
-      detected: p.date_hotspot || p.date_hotspot_ori || "—",
+      detected: when.full,
+      detectedDate: when.dateLabel,
+      detectedTime: when.timeLabel,
+      detectedShort: when.shortTime,
+      detectedIso: when.iso,
       desa: p.desa || "—",
       kec: p.kecamatan || "—",
       kab: p.kabkota || "—",
@@ -581,6 +622,9 @@
           .filter(function (item) {
             if (Number.isNaN(item.lat) || Number.isNaN(item.lng)) return false;
             return String(item.kab).toLowerCase() === "berau";
+          })
+          .sort(function (a, b) {
+            return String(b.detectedIso || "").localeCompare(String(a.detectedIso || ""));
           });
         lastFetchAt = new Date();
         loadingEl.hidden = true;
@@ -645,7 +689,7 @@
         return (
           '<button class="hotspot-item' + on + '" type="button" data-id="' + esc(item.id) + '">' +
             '<span class="pin-mini ' + item.level + '"><i></i></span>' +
-            '<span class="copy"><b>' + esc(item.name) + '</b><span class="meta">' + esc(item.source) + " · " + esc(item.kec) + "</span></span>" +
+            '<span class="copy"><b>' + esc(item.name) + '</b><span class="meta">' + esc(item.detectedShort || item.detected) + " · " + esc(item.source) + "</span></span>" +
             '<span class="badge ' + item.level + '">' + LEVELS[item.level].badge + "</span>" +
           "</button>"
         );
@@ -677,9 +721,13 @@
     HOTSPOTS.forEach(function (item) {
       const marker = L.marker([item.lat, item.lng], {
         icon: markerIcon(item.level, item.id === selectedId),
-        title: item.name,
+        title: item.name + " · " + (item.detectedShort || item.detected),
         zIndexOffset: 400
       }).addTo(map);
+      marker.bindTooltip(
+        esc(item.name) + "<br>" + esc(item.detectedShort || item.detected),
+        { sticky: true, className: "sipongi-tip", direction: "top" }
+      );
       marker.on("click", function () { select(item.id, true); });
       markers[item.id] = marker;
     });
@@ -820,7 +868,8 @@
         "<div><span>Satelit</span><strong>" + esc(satLabel(item.sat)) + "</strong></div>" +
         "<div><span>Desa</span><strong>" + esc(item.desa) + "</strong></div>" +
         "<div><span>Kecamatan</span><strong>" + esc(item.kec) + "</strong></div>" +
-        "<div class='span-2'><span>Waktu deteksi</span><strong>" + esc(item.detected) + "</strong></div>" +
+        "<div class='span-2'><span>Tanggal muncul</span><strong>" + esc(item.detectedDate || item.detected) + "</strong></div>" +
+        "<div class='span-2'><span>Jam muncul</span><strong>" + esc(item.detectedTime || "—") + "</strong></div>" +
       "</div>" +
       (near
         ? '<div class="detail-actions"><button class="go" type="button" id="open-near">Lihat penanganan terdekat · ' + esc(near.lokasi) + "</button></div>"
