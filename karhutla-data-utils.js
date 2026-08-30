@@ -20,10 +20,7 @@ window.KarhutlaData = (function () {
   }
 
   function todayKey() {
-    const n = new Date();
-    const m = String(n.getMonth() + 1).padStart(2, "0");
-    const d = String(n.getDate()).padStart(2, "0");
-    return n.getFullYear() + "-" + m + "-" + d;
+    return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Makassar" });
   }
 
   function dayKey(iso) {
@@ -227,6 +224,15 @@ window.KarhutlaData = (function () {
     return params.toString();
   }
 
+  function isBerauFeature(feature) {
+    const p = (feature && feature.properties) || {};
+    if (String(p.kabkota).toLowerCase() !== "berau") return false;
+    const g = feature.geometry && feature.geometry.coordinates ? feature.geometry.coordinates : [p.long, p.lat];
+    const lat = Number(p.lat != null ? p.lat : g[1]);
+    const lng = Number(p.long != null ? p.long : g[0]);
+    return Number.isFinite(lat) && Number.isFinite(lng);
+  }
+
   async function fetchFrom(base, from, to) {
     const join = base.indexOf("?") >= 0 ? "&" : "?";
     const res = await fetch(base + join + buildQuery(from, to), { cache: "no-store" });
@@ -243,10 +249,7 @@ window.KarhutlaData = (function () {
     for (let i = 0; i < endpoints.length; i += 1) {
       try {
         const features = await fetchFrom(endpoints[i], from, to);
-        return features.filter(function (f) {
-          const p = f.properties || {};
-          return String(p.kabkota).toLowerCase() === "berau";
-        });
+        return features.filter(isBerauFeature);
       } catch (err) {
         /* try next endpoint */
       }

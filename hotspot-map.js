@@ -125,10 +125,8 @@
   }
 
   function todayKey() {
-    const n = new Date();
-    const m = String(n.getMonth() + 1).padStart(2, "0");
-    const d = String(n.getDate()).padStart(2, "0");
-    return n.getFullYear() + "-" + m + "-" + d;
+    if (window.KarhutlaData && KarhutlaData.todayKey) return KarhutlaData.todayKey();
+    return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Makassar" });
   }
 
   function dayKey(iso) {
@@ -426,14 +424,13 @@
   }
 
   function buildQuery() {
-    const custom = selectedDay !== "today";
     const key = activeDayKey();
     const params = new URLSearchParams();
     params.set("wilayah", "IN");
-    params.set("filterperiode", custom ? "true" : "false");
-    params.set("from", custom ? key : "");
-    params.set("to", custom ? key : "");
-    params.set("late", custom ? "custom" : "24");
+    params.set("filterperiode", "true");
+    params.set("from", key);
+    params.set("to", key);
+    params.set("late", "custom");
     params.set("provinsi", PROVINSI_KALTIM);
     params.set("kabkota", "");
     ["NASA-MODIS", "NASA-SNPP", "NASA-NOAA20"].forEach(function (name) {
@@ -686,7 +683,11 @@
         .concat(PATROLS.map(function (p) { return p.tanggal; }))
         .filter(Boolean)
     )).sort();
-    if (pickLatest && DATE_KEYS.length) selectedDay = DATE_KEYS[DATE_KEYS.length - 1];
+    if (pickLatest) {
+      selectedDay = window.KarhutlaData && typeof KarhutlaData.pickActiveDay === "function"
+        ? KarhutlaData.pickActiveDay(CASES)
+        : (DATE_KEYS.length ? DATE_KEYS[DATE_KEYS.length - 1] : todayKey());
+    }
   }
 
   function dayPatrols() {
@@ -771,30 +772,42 @@
     loadingEl.hidden = false;
     refreshBtn.disabled = true;
     let lastError = null;
-    const endpoints = sipongiEndpoints();
-    for (let i = 0; i < endpoints.length; i += 1) {
-      try {
-        const features = await fetchFrom(endpoints[i]);
-        HOTSPOTS = features
-          .map(mapFeature)
-          .filter(function (item) {
-            if (Number.isNaN(item.lat) || Number.isNaN(item.lng)) return false;
-            return String(item.kab).toLowerCase() === "berau";
-          })
-          .sort(function (a, b) {
-            return String(b.detectedIso || "").localeCompare(String(a.detectedIso || ""));
-          });
-        lastFetchAt = new Date();
-        loadingEl.hidden = true;
-        refreshBtn.disabled = false;
-        loading = false;
-        selectedId = null;
-        paint();
-        fitDay();
-        return;
-      } catch (err) {
-        lastError = err;
+    const day = activeDayKey();
+    try {
+      let features = null;
+      if (window.KarhutlaData && typeof KarhutlaData.fetchSipongi === "function") {
+        features = await KarhutlaData.fetchSipongi(day, day);
+      } else {
+        const endpoints = sipongiEndpoints();
+        for (let i = 0; i < endpoints.length; i += 1) {
+          try {
+            features = await fetchFrom(endpoints[i]);
+            break;
+          } catch (err) {
+            lastError = err;
+          }
+        }
       }
+      if (!features) throw lastError || new Error("SiPongi belum termuat");
+      HOTSPOTS = features
+        .map(mapFeature)
+        .filter(function (item) {
+          if (Number.isNaN(item.lat) || Number.isNaN(item.lng)) return false;
+          return String(item.kab).toLowerCase() === "berau";
+        })
+        .sort(function (a, b) {
+          return String(b.detectedIso || "").localeCompare(String(a.detectedIso || ""));
+        });
+      lastFetchAt = new Date();
+      loadingEl.hidden = true;
+      refreshBtn.disabled = false;
+      loading = false;
+      selectedId = null;
+      paint();
+      fitDay();
+      return;
+    } catch (err) {
+      lastError = err;
     }
     HOTSPOTS = [];
     loadingEl.hidden = true;
@@ -861,7 +874,7 @@
     sumEksternal.textContent = String(eksternal);
     const patrolAll = PATROLS.filter(function (p) { return p.tanggal === activeDayKey(); }).length;
     if (sumPatroli) sumPatroli.textContent = String(patrolAll);
-    const label = selectedDay === "today" ? "Hari ini (24 jam)" : formatDate(selectedDay);
+    const label = formatDate(activeDayKey());
     const hourBit = selectedHour === "all" ? "" : " · jam " + hourChipLabel(selectedHour) + " WITA";
     const sipongiBit = selectedHour === "all" || !showSipongi
       ? "SiPongi " + sipongiAll
@@ -882,10 +895,9 @@
     const cases = dayCases();
     const spots = visibleHotspots();
     const patrols = dayPatrols();
-    const total = spots.length + cases.length + patrols.length;
-    countEl.textContent = String(total);
+    countEl.textContent = String(spots.length);
     if (listLabel) {
-      listLabel.textContent = selectedHour === "all" ? "titik di tanggal ini" : "titik di jam " + hourChipLabel(selectedHour);
+      listLabel.textContent = selectedHour === "all" ? "hotspot SiPongi" : "hotspot jam " + hourChipLabel(selectedHour);
     }
     let html = "";
     if (spots.length) {
