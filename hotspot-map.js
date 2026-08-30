@@ -32,6 +32,7 @@
   }
   const MATCH_KM = 3;
   const NEAR_KM = 5;
+  const PATROL_MATCH_KM = 0.15;
   const boundsOps = L.latLngBounds([1.87, 117.13], [2.40, 117.63]);
 
   const listEl = document.getElementById("hotspot-list");
@@ -373,10 +374,13 @@
     });
   }
 
-  function markerIcon(level, on) {
+  function markerIcon(level, on, patrolled) {
     return L.divIcon({
       className: "",
-      html: '<span class="pin ' + level + (on ? " is-on" : "") + '"><i class="pin-ring"></i><i class="pin-core"></i></span>',
+      html: '<span class="pin ' + level + (patrolled ? " is-patrolled" : "") + (on ? " is-on" : "") + '">' +
+        '<i class="pin-ring"></i><i class="pin-core"></i>' +
+        (patrolled ? '<b class="pin-check">✓</b>' : "") +
+        "</span>",
       iconSize: [22, 22],
       iconAnchor: [11, 11]
     });
@@ -650,12 +654,13 @@
       waktu: dash(row && row.waktu),
       site: dash(row && row.site),
       lokasi: dash(row && row.lokasi),
-      lat: xy.lat,
-      lng: xy.lng,
+      lat: Number.isFinite(Number(row && row.lat)) ? Number(row.lat) : xy.lat,
+      lng: Number.isFinite(Number(row && row.lng)) ? Number(row.lng) : xy.lng,
       coordRaw: row && row.koordinat,
       status: dash(row && row.status) || "Aman",
       personil: dash(row && row.personil),
       keterangan: dash(row && row.keterangan),
+      hotspotKey: String((row && row.hotspot_key) || ""),
       media: { photos: photos }
     };
   }
@@ -680,6 +685,50 @@
     if (!showPatroli) return [];
     const key = activeDayKey();
     return PATROLS.filter(function (item) { return item.tanggal === key; });
+  }
+
+  function hotspotDay(item) {
+    if (item && item.detectedIso) {
+      const key = new Date(item.detectedIso).toLocaleDateString("en-CA", { timeZone: "Asia/Makassar" });
+      if (key) return key;
+    }
+    return activeDayKey();
+  }
+
+  function hotspotKey(item) {
+    if (!item || !hasCoord(item)) return "";
+    return hotspotDay(item) + "|" + Number(item.lat).toFixed(5) + "|" + Number(item.lng).toFixed(5);
+  }
+
+  function patrolMatchHotspot(item) {
+    if (!item) return null;
+    const key = hotspotKey(item);
+    if (key) {
+      const hit = PATROLS.find(function (row) { return row.hotspotKey && row.hotspotKey === key; });
+      if (hit) return hit;
+    }
+    if (!hasCoord(item)) return null;
+    const day = hotspotDay(item);
+    let best = null;
+    let bestD = PATROL_MATCH_KM;
+    PATROLS.forEach(function (row) {
+      if (!hasCoord(row)) return;
+      if (day && row.tanggal && row.tanggal !== day) return;
+      const d = haversineKm(item.lat, item.lng, row.lat, row.lng);
+      if (d < bestD) {
+        bestD = d;
+        best = row;
+      }
+    });
+    return best;
+  }
+
+  function patrolCoversHotspot(patrol, spots) {
+    if (!patrol) return false;
+    return spots.some(function (spot) {
+      const hit = patrolMatchHotspot(spot);
+      return hit && hit.id === patrol.id;
+    });
   }
 
   function dayCases() {
@@ -834,11 +883,16 @@
       html += '<p class="list-group">Hotspot satelit</p>';
       html += spots.map(function (item) {
         const on = item.id === selectedId ? " is-on" : "";
+        const patrol = patrolMatchHotspot(item);
+        const pinClass = item.level + (patrol ? " is-patrolled" : "");
+        const badge = patrol
+          ? '<span class="badge patroli-erg">Patroli ERG</span>'
+          : '<span class="badge ' + item.level + '">' + LEVELS[item.level].badge + "</span>";
         return (
           '<button class="hotspot-item' + on + '" type="button" data-id="' + esc(item.id) + '">' +
-            '<span class="pin-mini ' + item.level + '"><i></i></span>' +
+            '<span class="pin-mini ' + pinClass + '"><i></i></span>' +
             '<span class="copy"><b>' + esc(item.name) + '</b><span class="meta">' + esc(item.detectedShort || item.detected) + " · " + esc(item.source) + "</span></span>" +
-            '<span class="badge ' + item.level + '">' + LEVELS[item.level].badge + "</span>" +
+            badge +
           "</button>"
         );
       }).join("");
@@ -880,13 +934,15 @@
     });
     if (!showSipongi) return;
     visibleHotspots().forEach(function (item) {
+      const patrol = patrolMatchHotspot(item);
       const marker = L.marker([item.lat, item.lng], {
-        icon: markerIcon(item.level, item.id === selectedId),
-        title: item.name + " · " + (item.detectedShort || item.detected),
-        zIndexOffset: 400
+        icon: markerIcon(item.level, item.id === selectedId, !!patrol),
+        title: item.name + " · " + (item.detectedShort || item.detected) + (patrol ? " · Sudah patroli ERG" : ""),
+        zIndexOffset: patrol ? 500 : 400
       }).addTo(map);
       marker.bindTooltip(
-        esc(item.name) + "<br>" + esc(item.detectedShort || item.detected),
+        esc(item.name) + "<br>" + esc(item.detectedShort || item.detected) +
+        (patrol ? "<br>Sudah patroli ERG" : ""),
         { sticky: true, className: "sipongi-tip", direction: "top" }
       );
       marker.on("click", function () { select(item.id, true); });
@@ -918,8 +974,10 @@
       delete patrolMarkers[id];
     });
     if (!showPatroli) return;
+    const spots = visibleHotspots();
     dayPatrols().forEach(function (item) {
       if (!hasCoord(item)) return;
+      if (patrolCoversHotspot(item, spots)) return;
       const marker = L.marker([item.lat, item.lng], {
         icon: patrolIcon(item.id === selectedId),
         title: item.lokasi + " · " + item.site,
@@ -1038,15 +1096,49 @@
     }
   }
 
+  function openPatroliFromHotspot(item) {
+    const draft = {
+      hotspot_key: hotspotKey(item),
+      lat: item.lat,
+      lng: item.lng,
+      desa: item.desa,
+      kec: item.kec,
+      name: item.name,
+      source: item.source,
+      tanggal: hotspotDay(item),
+      jam: item.detectedTime || "",
+      kawasan: item.kawasan || ""
+    };
+    try {
+      sessionStorage.setItem("karhutla-patroli-draft", JSON.stringify(draft));
+    } catch (err) {
+      /* continue with query string */
+    }
+    const qs = new URLSearchParams();
+    qs.set("from", "hotspot");
+    qs.set("lat", String(item.lat));
+    qs.set("lng", String(item.lng));
+    qs.set("tanggal", draft.tanggal);
+    if (draft.hotspot_key) qs.set("key", draft.hotspot_key);
+    window.location.href = "patroli.html?" + qs.toString();
+  }
+
   function renderSipongiDetail(item) {
     emptyEl.hidden = true;
     cardEl.hidden = false;
     detailPane.classList.add("is-open");
     const near = nearestCase(item);
+    const patrol = patrolMatchHotspot(item);
+    const statusBadge = patrol
+      ? '<span class="badge patroli-erg">Sudah patroli ERG</span>'
+      : '<span class="badge selesai">Belum patroli ERG</span>';
+    const patrolAction = patrol
+      ? '<button class="go" type="button" id="open-patrol">Lihat laporan patroli ERG</button>'
+      : '<button class="go" type="button" id="make-patrol">Buat laporan patroli ERG</button>';
     cardEl.innerHTML =
       "<small>" + esc(item.source) + " · Berau</small>" +
       "<h2>" + esc(item.name) + "</h2>" +
-      '<p><span class="badge ' + item.level + '">' + LEVELS[item.level].label + " · " + item.confidence + '%</span> <span class="badge selesai">Belum terverifikasi lapangan</span></p>' +
+      '<p><span class="badge ' + item.level + '">' + LEVELS[item.level].label + " · " + item.confidence + "%</span> " + statusBadge + "</p>" +
       '<div class="detail-grid">' +
         "<div><span>Koordinat</span><strong>" + item.lat.toFixed(5) + ", " + item.lng.toFixed(5) + "</strong></div>" +
         "<div><span>Satelit</span><strong>" + esc(satLabel(item.sat)) + "</strong></div>" +
@@ -1055,8 +1147,9 @@
         "<div class='span-2'><span>Tanggal muncul</span><strong>" + esc(item.detectedDate || item.detected) + "</strong></div>" +
         "<div class='span-2'><span>Jam muncul</span><strong>" + esc(item.detectedTime || "—") + "</strong></div>" +
       "</div>" +
+      '<div class="detail-actions">' + patrolAction + "</div>" +
       (near
-        ? '<div class="detail-actions"><button class="go" type="button" id="open-near">Lihat penanganan terdekat · ' + esc(near.lokasi) + "</button></div>"
+        ? '<div class="detail-actions"><button class="ghost" type="button" id="open-near">Lihat penanganan terdekat · ' + esc(near.lokasi) + "</button></div>"
         : "") +
       '<div class="detail-actions">' +
         '<button class="ghost" type="button" id="focus-spot">Fokuskan di peta</button>' +
@@ -1072,6 +1165,14 @@
     const openNear = document.getElementById("open-near");
     if (openNear && near) {
       openNear.addEventListener("click", function () { select(near.id, true); });
+    }
+    const makePatrol = document.getElementById("make-patrol");
+    if (makePatrol) {
+      makePatrol.addEventListener("click", function () { openPatroliFromHotspot(item); });
+    }
+    const openPatrol = document.getElementById("open-patrol");
+    if (openPatrol && patrol) {
+      openPatrol.addEventListener("click", function () { select(patrol.id, true); });
     }
   }
 

@@ -21,6 +21,7 @@
   const fields = {
     index: document.getElementById("f-index"),
     id: document.getElementById("f-id"),
+    hotspotKey: document.getElementById("f-hotspot-key"),
     tanggal: document.getElementById("f-tanggal"),
     bulan: document.getElementById("f-bulan"),
     week: document.getElementById("f-week"),
@@ -251,6 +252,7 @@
   function fillForm(row, index) {
     fields.index.value = index >= 0 ? String(index) : "";
     fields.id.value = text(row && row.id);
+    if (fields.hotspotKey) fields.hotspotKey.value = text(row && row.hotspot_key);
     fields.tanggal.value = dayKey(row && row.tanggal);
     fields.bulan.value = text(row && row.bulan) || monthName(fields.tanggal.value);
     fields.week.value = text(row && row.week) || weekOfMonth(fields.tanggal.value);
@@ -288,6 +290,7 @@
     form.reset();
     fields.index.value = "";
     fields.id.value = "";
+    if (fields.hotspotKey) fields.hotspotKey.value = "";
     fields.status.value = "Aman";
     fillForm(null, -1);
     setStatus("");
@@ -296,6 +299,7 @@
   function readForm() {
     const tanggal = fields.tanggal.value;
     const files = currentPhotoFiles();
+    const xy = parseCoordLocal(fields.koordinat.value);
     return {
       id: fields.id.value || newId(),
       tanggal: tanggal || null,
@@ -305,6 +309,9 @@
       site: emptyToNull(siteValue()),
       lokasi: emptyToNull(fields.lokasi.value),
       koordinat: emptyToNull(fields.koordinat.value),
+      lat: Number.isFinite(xy.lat) ? xy.lat : null,
+      lng: Number.isFinite(xy.lng) ? xy.lng : null,
+      hotspot_key: emptyToNull(fields.hotspotKey && fields.hotspotKey.value),
       status: emptyToNull(fields.status.value) || "Aman",
       personil: emptyToNull(fields.personil.value),
       keterangan: emptyToNull(fields.keterangan.value),
@@ -313,6 +320,15 @@
         files: files
       }
     };
+  }
+
+  function parseCoordLocal(text) {
+    const raw = String(text || "").trim();
+    const m = raw.match(/(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    const n = raw.match(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/);
+    if (n) return { lat: parseFloat(n[1]), lng: parseFloat(n[2]) };
+    return { lat: NaN, lng: NaN };
   }
 
   function matchesSearch(row, q) {
@@ -499,7 +515,8 @@
       const shared = result && result.persistent;
       setStatus(
         (shared ? "Tersimpan." : "Tersimpan di browser ini.") +
-        " Total " + dataStore().total_records + " patroli.",
+        " Total " + dataStore().total_records + " patroli." +
+        (record.hotspot_key ? " Buka Hotspot untuk melihat tanda patroli ERG pada titik ini." : ""),
         "is-ok"
       );
     } catch (err) {
@@ -659,8 +676,82 @@
   searchEl.addEventListener("input", renderList);
   form.addEventListener("submit", saveRecord);
 
+  function nowTimeWita() {
+    return new Date().toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Makassar"
+    });
+  }
+
+  function todayIso() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Makassar" });
+  }
+
+  function applyHotspotDraft() {
+    let draft = null;
+    try {
+      draft = JSON.parse(sessionStorage.getItem("karhutla-patroli-draft") || "null");
+    } catch (err) {
+      draft = null;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get("from");
+    if ((!draft || draft.lat == null) && (from === "hotspot" || from === "sipongi")) {
+      draft = {
+        lat: Number(params.get("lat")),
+        lng: Number(params.get("lng")),
+        tanggal: params.get("tanggal") || "",
+        hotspot_key: params.get("key") || ""
+      };
+    }
+    const lat = Number(draft && draft.lat);
+    const lng = Number(draft && draft.lng);
+    if (!draft || !Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+    try { sessionStorage.removeItem("karhutla-patroli-draft"); } catch (err) { /* ignore */ }
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, "", "patroli.html");
+    }
+    const tempat = [draft.desa, draft.kec].filter(function (v) {
+      return v && v !== "—";
+    }).join(", ") || draft.name || "Hotspot SiPongi";
+    const ket = "Patroli ERG terhadap hotspot SiPongi" +
+      (draft.source ? " (" + draft.source + ")" : "") +
+      (draft.jam ? " · muncul " + draft.jam : "");
+    fillForm({
+      hotspot_key: draft.hotspot_key || "",
+      tanggal: draft.tanggal || todayIso(),
+      waktu: nowTimeWita(),
+      lokasi: tempat,
+      koordinat: lat.toFixed(6) + ", " + lng.toFixed(6),
+      keterangan: ket,
+      status: "Aman"
+    }, -1);
+    fillDateParts();
+    titleEl.textContent = "Patroli dari hotspot";
+    hintEl.textContent = "Koordinat sudah terisi dari titik yang diklik. Pilih site, lengkapi status dan personil, lalu simpan.";
+    setStatus("Koordinat hotspot terisi otomatis. Lengkapi data patroli ERG lalu simpan.", "is-ok");
+    return true;
+  }
+
+  function applyOpenId() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    if (!id) return false;
+    const list = records();
+    const index = list.findIndex(function (row) { return String(row && row.id) === id; });
+    if (index < 0) return false;
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, "", "patroli.html");
+    }
+    fillForm(list[index], index);
+    setStatus("Membuka laporan patroli ERG yang terhubung dengan hotspot ini.", "is-ok");
+    return true;
+  }
+
   function boot() {
-    resetForm();
+    if (!applyHotspotDraft() && !applyOpenId()) resetForm();
     renderList();
   }
 

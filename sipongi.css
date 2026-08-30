@@ -198,6 +198,54 @@
   border: 1px solid rgba(239, 90, 54, .45);
 }
 
+.sp-table th:last-child,
+.sp-table td.sp-action {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #0c1210;
+  box-shadow: -8px 0 12px rgba(0, 0, 0, .28);
+}
+
+.sp-table th:last-child {
+  z-index: 2;
+}
+
+.sp-table tbody tr:hover td.sp-action {
+  background: #101816;
+}
+
+.sp-patrol-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: #62b044;
+  color: #fff;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sp-patrol-btn:hover {
+  background: #6dbf4d;
+}
+
+.sp-patrol-btn.is-done {
+  background: rgba(74, 163, 255, .18);
+  color: #8fd0ff;
+  border: 1px solid rgba(74, 163, 255, .5);
+}
+
+.sp-patrol-btn.is-done:hover {
+  background: rgba(74, 163, 255, .28);
+  color: #fff;
+}
+
 @media (max-width: 980px) {
   .page-sipongi { height: auto; max-height: none; overflow: visible; }
   .sp-card { min-height: 70vh; }

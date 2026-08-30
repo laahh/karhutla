@@ -933,6 +933,38 @@
   box-shadow: 0 0 12px currentColor, 0 0 0 4px rgba(255,255,255,.16);
 }
 
+.pin.is-patrolled .pin-ring {
+  border-color: #4aa3ff;
+  animation: none;
+  opacity: 1;
+}
+
+.pin-check {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4aa3ff;
+  color: #061018;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 12px;
+  text-align: center;
+  box-shadow: 0 0 0 2px rgba(6, 16, 24, .85);
+}
+
+.hotspot-item .pin-mini.is-patrolled {
+  box-shadow: 0 0 0 2px rgba(74, 163, 255, .45);
+}
+
+.badge.patroli-erg {
+  color: #6ec8ff;
+  border: 1px solid rgba(74, 163, 255, .55);
+}
+
 @keyframes pin-pulse {
   0% { transform: scale(.75); opacity: .85; }
   100% { transform: scale(1.85); opacity: 0; }

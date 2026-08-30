@@ -94,8 +94,110 @@
       lat: Number.isFinite(lat) ? lat : "",
       lng: Number.isFinite(lng) ? lng : "",
       kawasan: p.kawasan || "—",
-      konsesi: konsesiOf(lat, lng)
+      konsesi: konsesiOf(lat, lng),
+      id: [when.dateKey, when.timeLabel, lat, lng, p.sumber || "", p.desa || ""].join("|")
     };
+  }
+
+  function hotspotKey(row) {
+    const lat = Number(row && row.lat);
+    const lng = Number(row && row.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
+    return String(row.tanggal || "") + "|" + lat.toFixed(5) + "|" + lng.toFixed(5);
+  }
+
+  function patrolRecords() {
+    const data = window.KARHUTLA_PATROLI_DATA;
+    return data && Array.isArray(data.records) ? data.records : [];
+  }
+
+  function patrolCoord(row) {
+    const lat = Number(row && row.lat);
+    const lng = Number(row && row.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat: lat, lng: lng };
+    const raw = String((row && row.koordinat) || "").trim();
+    const m = raw.match(/(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    return { lat: NaN, lng: NaN };
+  }
+
+  function haversineKm(aLat, aLng, bLat, bLng) {
+    const R = 6371;
+    const dLat = (bLat - aLat) * Math.PI / 180;
+    const dLng = (bLng - aLng) * Math.PI / 180;
+    const s = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(aLat * Math.PI / 180) * Math.cos(bLat * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  }
+
+  function patrolMatch(row) {
+    if (!row) return null;
+    const key = hotspotKey(row);
+    const list = patrolRecords();
+    if (key) {
+      const hit = list.find(function (item) { return item && item.hotspot_key === key; });
+      if (hit) return hit;
+    }
+    const lat = Number(row.lat);
+    const lng = Number(row.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const day = row.tanggal || "";
+    let best = null;
+    let bestD = 0.15;
+    list.forEach(function (item) {
+      const xy = patrolCoord(item);
+      if (!Number.isFinite(xy.lat) || !Number.isFinite(xy.lng)) return;
+      if (day && item.tanggal && String(item.tanggal) !== day) return;
+      const d = haversineKm(lat, lng, xy.lat, xy.lng);
+      if (d < bestD) {
+        bestD = d;
+        best = item;
+      }
+    });
+    return best;
+  }
+
+  function openPatroliFromRow(row) {
+    const lat = Number(row && row.lat);
+    const lng = Number(row && row.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setStatus("Titik ini tidak punya koordinat, tidak bisa dibuat patroli.", "is-err");
+      return;
+    }
+    const draft = {
+      hotspot_key: hotspotKey(row),
+      lat: lat,
+      lng: lng,
+      desa: row.desa,
+      kec: row.kecamatan,
+      name: row.desa && row.desa !== "—" ? row.desa : "Hotspot SiPongi",
+      source: row.satelit,
+      tanggal: row.tanggal || "",
+      jam: row.jam && row.jam !== "—" ? row.jam : "",
+      kawasan: row.kawasan || ""
+    };
+    try {
+      sessionStorage.setItem("karhutla-patroli-draft", JSON.stringify(draft));
+    } catch (err) {
+      /* continue with query string */
+    }
+    const qs = new URLSearchParams();
+    qs.set("from", "sipongi");
+    qs.set("lat", String(lat));
+    qs.set("lng", String(lng));
+    if (draft.tanggal) qs.set("tanggal", draft.tanggal);
+    if (draft.hotspot_key) qs.set("key", draft.hotspot_key);
+    window.location.href = "patroli.html?" + qs.toString();
+  }
+
+  function openExistingPatrol(row) {
+    const hit = patrolMatch(row);
+    if (hit && hit.id) {
+      window.location.href = "patroli.html?id=" + encodeURIComponent(hit.id);
+      return;
+    }
+    openPatroliFromRow(row);
   }
 
   function setStatus(message, kind) {
@@ -143,12 +245,19 @@
     const list = visibleRows();
     countEl.textContent = list.length + " titik";
     if (!list.length) {
-      bodyEl.innerHTML = '<tr><td class="sp-empty" colspan="12">' +
+      bodyEl.innerHTML = '<tr><td class="sp-empty" colspan="13">' +
         (rows.length ? "Tidak ada titik yang cocok." : "Belum ada data. Pilih tanggal lalu klik Muat data.") +
         "</td></tr>";
       return;
     }
     bodyEl.innerHTML = list.map(function (row, i) {
+      const patrol = patrolMatch(row);
+      const canPatrol = row.lat !== "" && row.lng !== "";
+      const action = !canPatrol
+        ? "—"
+        : (patrol
+          ? '<button type="button" class="sp-patrol-btn is-done" data-open="' + encodeURIComponent(row.id) + '">Lihat patroli ERG</button>'
+          : '<button type="button" class="sp-patrol-btn" data-make="' + encodeURIComponent(row.id) + '">Buat patroli ERG</button>');
       return "<tr>" +
         "<td>" + (i + 1) + "</td>" +
         "<td>" + esc(formatDateId(row.tanggal)) + "</td>" +
@@ -163,6 +272,7 @@
         "<td>" + esc(row.kawasan) + "</td>" +
         '<td><span class="sp-conf ' + (row.konsesi === "Dalam konsesi" ? "sp-konsesi-dalam" : row.konsesi === "Luar konsesi" ? "sp-konsesi-luar" : "") + '">' +
           esc(row.konsesi || "—") + "</span></td>" +
+        '<td class="sp-action">' + action + "</td>" +
         "</tr>";
     }).join("");
   }
@@ -343,7 +453,29 @@
     e.preventDefault();
     loadData();
   });
+  bodyEl.addEventListener("click", function (e) {
+    const makeBtn = e.target.closest("[data-make]");
+    const openBtn = e.target.closest("[data-open]");
+    const raw = makeBtn
+      ? makeBtn.getAttribute("data-make")
+      : (openBtn ? openBtn.getAttribute("data-open") : "");
+    if (!raw) return;
+    let id = raw;
+    try { id = decodeURIComponent(raw); } catch (err) { /* keep raw */ }
+    const row = rows.find(function (item) { return item.id === id; });
+    if (!row) return;
+    if (openBtn) openExistingPatrol(row);
+    else openPatroliFromRow(row);
+  });
 
-  setRange(7);
-  loadData();
+  function boot() {
+    setRange(7);
+    loadData();
+  }
+
+  if (window.KarhutlaPatroliStore) {
+    KarhutlaPatroliStore.hydrate().then(boot).catch(boot);
+  } else {
+    boot();
+  }
 })();
