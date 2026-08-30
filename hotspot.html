@@ -24,43 +24,24 @@
       <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
     </a>
     <nav class="desktop-nav" aria-label="Navigasi utama">
-     <!-- <a href="testing.html">Beranda</a>
-      <a href="milestone.html">Milestone</a>
-      <a href="tahap.html">Tahap Pengendalian</a>
-      <a href="fokus.html">Fokus Area</a>
-      <a href="aktivitas.html">Aktivitas</a>
-      <a href="kesiapan.html">Kesiapan Tim</a>
-      <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
-      <a href="need-support.html">Need Support</a> -->
-
-
-
       <a href="testing.html">Beranda</a>
-         <a href="tahap.html" >Tahap Pengendalian</a>
+      <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
+      <a href="laporan.html">Laporan</a>
+      <a href="patroli.html">Patroli</a>
+      <a href="sipongi.html">SiPongi</a>
+    </nav>
+    <details class="mobile-menu">
+      <summary aria-label="Buka menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </summary>
+      <nav>
+        <a href="testing.html">Beranda</a>
         <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
-         <a href="laporan.html">Laporan</a>
-         <a href="aktivitas.html">Support Karhutla Berau</a>
-          <a href="need-support.html">Need Support</a>
-          <a href="milestone.html">Milestone</a>
-           <a href="fokus.html">Fokus Area</a>
-          <a href="kesiapan.html">Kesiapan Tim</a>
+        <a href="laporan.html">Laporan</a>
+        <a href="patroli.html">Patroli</a>
+        <a href="sipongi.html">SiPongi</a>
       </nav>
-      <details class="mobile-menu">
-        <summary aria-label="Buka menu">
-          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </summary>
-        <nav>
-         <a href="testing.html">Beranda</a>
-         <a href="tahap.html" >Tahap Pengendalian</a>
-        <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
-         <a href="laporan.html">Laporan</a>
-         <a href="aktivitas.html">Support Karhutla Berau</a>
-          <a href="need-support.html">Need Support</a>
-          <a href="milestone.html">Milestone</a>
-           <a href="fokus.html">Fokus Area</a>
-          <a href="kesiapan.html">Kesiapan Tim</a>
-        </nav>
-      </details>
+    </details>
     </header>
 
     <aside class="glass-panel list-card" aria-label="Agenda KARHUTLA harian">
@@ -73,7 +54,7 @@
       </div>
       <p class="eyebrow">Command center · per tanggal</p>
       <h1>Hotspot &amp; respon.</h1>
-      <p class="lead" id="data-source">SiPongi Kemenhut + penanganan terverifikasi. Cakupan Kabupaten Berau.</p>
+      <p class="lead" id="data-source">SiPongi Kemenhut + penanganan terverifikasi + patroli. Cakupan Kabupaten Berau.</p>
 
       <div class="date-strip" id="date-strip" role="tablist" aria-label="Pilih tanggal"></div>
 
@@ -89,6 +70,10 @@
         <article>
           <small>Eksternal</small>
           <strong id="sum-eksternal">0</strong>
+        </article>
+        <article>
+          <small>Patroli</small>
+          <strong id="sum-patroli">0</strong>
         </article>
       </div>
 
@@ -122,8 +107,11 @@
           <button type="button" data-layer="sat" class="is-on">Satelit</button>
           <button type="button" data-layer="dark">Gelap</button>
           <button type="button" data-layer="ops" class="is-on">Konsesi</button>
+        </div>
+        <div class="layer-switch" role="group" aria-label="Layer data">
           <button type="button" data-layer="sipongi" class="is-on">SiPongi</button>
           <button type="button" data-layer="kasus" class="is-on">Terverifikasi</button>
+          <button type="button" data-layer="patroli" class="is-on">Patroli</button>
         </div>
         <div class="zoom-switch" role="group" aria-label="Zoom peta">
           <button type="button" id="zoom-in" aria-label="Perbesar">+</button>
@@ -154,6 +142,7 @@
       <article><i class="dot rendah"></i><div><small>Low</small><p>SiPongi rendah</p></div></article>
       <article><i class="dot internal"></i><div><small>Internal</small><p>Dalam konsesi</p></div></article>
       <article><i class="dot kasus"></i><div><small>Eksternal</small><p>Luar konsesi</p></div></article>
+      <article><i class="dot patroli"></i><div><small>Patroli</small><p>Pencegahan</p></div></article>
       <article><i class="dot route"></i><div><small>Jalur</small><p>Base → titik api</p></div></article>
     </div>
   </section>
@@ -197,6 +186,7 @@
   <script src="kasus-data.js"></script>
   <script src="laporan-data.js"></script>
   <script src="laporan-store.js"></script>
+  <script src="patroli-store.js"></script>
   <script src="hotspot-map.js"></script>
   <script src="dokumentasi-lapangan.js"></script>
   <script src="page-fire.js"></script>

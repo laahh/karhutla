@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Form input patroli pencegahan KARHUTLA PT Berau Coal.">
+  <title>Patroli • KARHUTLA Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="laporan.css">
+</head>
+<body class="page-laporan">
+  <canvas class="embers" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Berau Coal HSE Beranda">
+      <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
+    </a>
+    <nav class="desktop-nav" aria-label="Navigasi utama">
+      <a href="testing.html">Beranda</a>
+      <a href="hotspot.html">Hotspot</a>
+      <a href="laporan.html">Laporan</a>
+      <a class="active" href="javascript:void(0)" aria-current="page">Patroli</a>
+      <a href="sipongi.html">SiPongi</a>
+    </nav>
+    <details class="mobile-menu">
+      <summary aria-label="Buka menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </summary>
+      <nav>
+        <a href="testing.html">Beranda</a>
+        <a href="hotspot.html">Hotspot</a>
+        <a href="laporan.html">Laporan</a>
+        <a class="active" href="javascript:void(0)" aria-current="page">Patroli</a>
+        <a href="sipongi.html">SiPongi</a>
+      </nav>
+    </details>
+  </header>
+
+  <main class="lp-main">
+    <div class="lp-hero">
+      <div>
+        <p class="eyebrow">PATROLI PENCEGAHAN KARHUTLA PT BERAU COAL</p>
+        <h1>Input Patroli</h1>
+        <p class="lp-lead">Catat hasil patroli lapangan: tanggal, site, lokasi, status, personil, dan dokumentasi.</p>
+      </div>
+      <div class="lp-hero-meta">
+        <span class="lp-count" id="lp-count">0 patroli</span>
+        <button type="button" class="lp-btn-download" id="lp-download-all">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M5 19h14"/></svg>
+          Unduh Excel
+        </button>
+        <button type="button" class="lp-btn-new" id="lp-new">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Patroli baru
+        </button>
+      </div>
+    </div>
+
+    <div class="lp-layout">
+      <aside class="lp-list-card" aria-label="Daftar patroli tersimpan">
+        <label class="lp-search">
+          <span class="sr-only">Cari patroli</span>
+          <input type="search" id="lp-search" placeholder="Cari tanggal, site, lokasi, atau status…">
+        </label>
+        <div class="lp-list" id="lp-list" role="list"></div>
+      </aside>
+
+      <section class="lp-form-card">
+        <form id="lp-form" novalidate>
+          <input type="hidden" name="index" id="f-index" value="">
+          <input type="hidden" name="id" id="f-id" value="">
+
+          <div class="lp-form-head">
+            <h2 id="lp-form-title">Patroli baru</h2>
+            <p id="lp-form-hint">Lengkapi data patroli. Kolom bertanda * wajib diisi. Bulan dan week terisi otomatis dari tanggal.</p>
+          </div>
+
+          <fieldset>
+            <legend>Waktu patroli</legend>
+            <div class="lp-grid lp-grid-3">
+              <label>
+                <span>Tanggal *</span>
+                <input type="date" name="tanggal" id="f-tanggal" required>
+              </label>
+              <label>
+                <span>Bulan</span>
+                <input type="text" name="bulan" id="f-bulan" readonly placeholder="otomatis">
+              </label>
+              <label>
+                <span>Week</span>
+                <input type="text" name="week" id="f-week" readonly placeholder="otomatis">
+              </label>
+            </div>
+            <div class="lp-grid lp-grid-2">
+              <label>
+                <span>Waktu *</span>
+                <input type="time" name="waktu" id="f-waktu" required>
+              </label>
+              <label>
+                <span>Status *</span>
+                <select name="status" id="f-status" required>
+                  <option value="Aman">Aman</option>
+                  <option value="Asap">Asap</option>
+                  <option value="Titik api">Titik api</option>
+                  <option value="Perlu tindak lanjut">Perlu tindak lanjut</option>
+                  <option value="Selesai">Selesai</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Lokasi</legend>
+            <div class="lp-grid lp-grid-3">
+              <label>
+                <span>Site *</span>
+                <select name="site" id="f-site" required>
+                  <option value="">Pilih site</option>
+                  <option value="BMO 1">BMO 1</option>
+                  <option value="BMO 2">BMO 2</option>
+                  <option value="BMO 3">BMO 3</option>
+                  <option value="GMO">GMO</option>
+                  <option value="LMO">LMO</option>
+                  <option value="SMO">SMO</option>
+                  <option value="BLOK 8">BLOK 8</option>
+                  <option value="SUARAN">SUARAN</option>
+                  <option value="Sembakungan">Sembakungan</option>
+                  <option value="Jalan Negara">Jalan Negara</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </label>
+              <label id="site-lain-wrap" hidden>
+                <span>Nama site *</span>
+                <input type="text" name="site_lain" id="f-site-lain" placeholder="contoh: Pit X">
+              </label>
+              <label>
+                <span>Lokasi *</span>
+                <input type="text" name="lokasi" id="f-lokasi" required placeholder="contoh: Area Revegetasi">
+              </label>
+              <label>
+                <span>Koordinat</span>
+                <input type="text" name="koordinat" id="f-koordinat" placeholder="2.162913°N  117.615015°E">
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Personil &amp; keterangan</legend>
+            <label>
+              <span>Personil</span>
+              <input type="text" name="personil" id="f-personil" placeholder="contoh: 4 orang ERG GMO">
+            </label>
+            <label>
+              <span>Keterangan</span>
+              <textarea name="keterangan" id="f-keterangan" rows="3" placeholder="Temuan, kondisi lapangan, atau tindak lanjut"></textarea>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Dokumentasi</legend>
+            <label>
+              <span>Foto dokumentasi</span>
+              <input type="file" id="f-fotos" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+            </label>
+            <div class="lp-photos" id="lp-photos"></div>
+            <p class="lp-photo-hint">Pilih foto dari HP/komputer, lalu klik Simpan. Tidak perlu pilih folder project.</p>
+          </fieldset>
+
+          <div class="lp-actions">
+            <p class="lp-status" id="lp-status" role="status"></p>
+            <div class="lp-actions-btns">
+              <button type="button" class="lp-btn-ghost" id="lp-reset">Batal</button>
+              <button type="button" class="lp-btn-ghost" id="lp-delete" hidden>Hapus</button>
+              <button type="button" class="lp-btn-ghost" id="lp-download-one">Unduh Excel ini</button>
+              <button type="submit" class="lp-btn-save" id="lp-save">Simpan</button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="patroli-store.js"></script>
+  <script src="patroli.js"></script>
+  <script src="embers.js"></script>
+  <script src="page-fire.js"></script>
+</body>
+</html>

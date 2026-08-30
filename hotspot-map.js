@@ -50,10 +50,12 @@
   const sumSipongi = document.getElementById("sum-sipongi");
   const sumInternal = document.getElementById("sum-internal");
   const sumEksternal = document.getElementById("sum-eksternal");
+  const sumPatroli = document.getElementById("sum-patroli");
   const showAllRoutesEl = document.getElementById("show-all-routes");
 
   let HOTSPOTS = [];
   let CASES = [];
+  let PATROLS = [];
   let DATE_KEYS = [];
   let selectedId = null;
   let selectedDay = "today";
@@ -61,8 +63,10 @@
   let scope = "semua";
   let showKasus = true;
   let showSipongi = true;
+  let showPatroli = true;
   const markers = {};
   const caseMarkers = {};
+  const patrolMarkers = {};
   let routeLayer = L.layerGroup();
   let lastFetchAt = null;
   let loading = false;
@@ -360,6 +364,15 @@
     });
   }
 
+  function patrolIcon(on) {
+    return L.divIcon({
+      className: "",
+      html: '<span class="pin patroli' + (on ? " is-on" : "") + '"><i class="pin-ring"></i><i class="pin-core"></i></span>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+  }
+
   function markerIcon(level, on) {
     return L.divIcon({
       className: "",
@@ -393,6 +406,7 @@
     const layers = opsLayer.getLayers().slice();
     Object.keys(markers).forEach(function (id) { layers.push(markers[id]); });
     Object.keys(caseMarkers).forEach(function (id) { layers.push(caseMarkers[id]); });
+    Object.keys(patrolMarkers).forEach(function (id) { layers.push(patrolMarkers[id]); });
     if (!layers.length) {
       map.fitBounds(boundsOps, hudPad());
       return;
@@ -615,9 +629,57 @@
       ? window.KARHUTLA_LAPORAN_DATA.reports
       : [];
     CASES = mergeCases(recs, reports);
-    DATE_KEYS = Array.from(new Set(CASES.map(function (c) { return c.tanggal; }).filter(Boolean))).sort();
-    if (DATE_KEYS.length) selectedDay = DATE_KEYS[DATE_KEYS.length - 1];
-    renderDateStrip();
+  }
+
+  function mapPatroli(row, index) {
+    const xy = parseCoord(row && row.koordinat);
+    const docs = (row && row.dokumentasi) || {};
+    const files = Array.isArray(docs.files) ? docs.files : [];
+    const photos = files.filter(function (src) {
+      if (window.KarhutlaPatroliStore) return KarhutlaPatroliStore.isPhotoRef(src);
+      return typeof src === "string" && (src.indexOf("laporan-foto/") === 0 || /^https?:\/\//.test(src) || src.indexOf("idb:") === 0);
+    }).map(function (src) {
+      return window.KarhutlaPatroliStore ? (KarhutlaPatroliStore.displayUrl(src) || src) : src;
+    }).filter(Boolean);
+    return {
+      kind: "patroli",
+      id: "patroli-" + (row && row.id ? row.id : index + 1),
+      tanggal: dayKey(row && row.tanggal),
+      bulan: dash(row && row.bulan),
+      week: dash(row && row.week),
+      waktu: dash(row && row.waktu),
+      site: dash(row && row.site),
+      lokasi: dash(row && row.lokasi),
+      lat: xy.lat,
+      lng: xy.lng,
+      coordRaw: row && row.koordinat,
+      status: dash(row && row.status) || "Aman",
+      personil: dash(row && row.personil),
+      keterangan: dash(row && row.keterangan),
+      media: { photos: photos }
+    };
+  }
+
+  function loadPatrols() {
+    const rows = window.KARHUTLA_PATROLI_DATA && Array.isArray(window.KARHUTLA_PATROLI_DATA.records)
+      ? window.KARHUTLA_PATROLI_DATA.records
+      : [];
+    PATROLS = rows.map(mapPatroli);
+  }
+
+  function refreshDateKeys(pickLatest) {
+    DATE_KEYS = Array.from(new Set(
+      CASES.map(function (c) { return c.tanggal; })
+        .concat(PATROLS.map(function (p) { return p.tanggal; }))
+        .filter(Boolean)
+    )).sort();
+    if (pickLatest && DATE_KEYS.length) selectedDay = DATE_KEYS[DATE_KEYS.length - 1];
+  }
+
+  function dayPatrols() {
+    if (!showPatroli) return [];
+    const key = activeDayKey();
+    return PATROLS.filter(function (item) { return item.tanggal === key; });
   }
 
   function dayCases() {
@@ -690,9 +752,9 @@
     const keys = ["today"].concat(DATE_KEYS.slice().reverse());
     dateStrip.innerHTML = keys.map(function (key) {
       const on = key === selectedDay ? " is-on" : "";
-      const count = key === "today"
-        ? ""
-        : " · " + CASES.filter(function (c) { return c.tanggal === key; }).length;
+      const nCase = CASES.filter(function (c) { return c.tanggal === key; }).length;
+      const nPatrol = PATROLS.filter(function (p) { return p.tanggal === key; }).length;
+      const count = key === "today" ? "" : " · " + (nCase + nPatrol);
       return '<button type="button" class="date-chip' + on + '" data-day="' + key + '">' +
         esc(chipLabel(key)) + (count ? "<i>" + count.replace(" · ", "") + "</i>" : "") +
         "</button>";
@@ -739,24 +801,30 @@
       : String(sipongiShown);
     sumInternal.textContent = String(internal);
     sumEksternal.textContent = String(eksternal);
+    const patrolAll = PATROLS.filter(function (p) { return p.tanggal === activeDayKey(); }).length;
+    if (sumPatroli) sumPatroli.textContent = String(patrolAll);
     const label = selectedDay === "today" ? "Hari ini (24 jam)" : formatDate(selectedDay);
     const hourBit = selectedHour === "all" ? "" : " · jam " + hourChipLabel(selectedHour) + " WITA";
     const sipongiBit = selectedHour === "all" || !showSipongi
       ? "SiPongi " + sipongiAll
       : "SiPongi " + sipongiShown + " dari " + sipongiAll;
     sourceEl.textContent = "Berau · " + label + hourBit + " · " + sipongiBit + " · Internal " + internal + " · Eksternal " + eksternal +
+      " · Patroli " + patrolAll +
       (lastFetchAt ? " · " + lastFetchAt.toLocaleTimeString("id-ID") : "");
     liveStatus.textContent = cases.length
-      ? (internal + " respon internal, " + eksternal + " eksternal")
-      : (sipongiShown
-        ? sipongiShown + " hotspot SiPongi" + (selectedHour === "all" ? "" : " jam " + hourChipLabel(selectedHour)) + ", belum ada penanganan terverifikasi"
-        : "Tidak ada titik pada " + (selectedHour === "all" ? "tanggal ini" : "jam ini"));
+      ? (internal + " respon internal, " + eksternal + " eksternal" + (patrolAll ? ", " + patrolAll + " patroli" : ""))
+      : (patrolAll
+        ? patrolAll + " patroli pencegahan" + (sipongiShown ? ", " + sipongiShown + " hotspot SiPongi" : "")
+        : (sipongiShown
+          ? sipongiShown + " hotspot SiPongi" + (selectedHour === "all" ? "" : " jam " + hourChipLabel(selectedHour)) + ", belum ada penanganan terverifikasi"
+          : "Tidak ada titik pada " + (selectedHour === "all" ? "tanggal ini" : "jam ini")));
   }
 
   function renderList() {
     const cases = dayCases();
     const spots = visibleHotspots();
-    const total = spots.length + cases.length;
+    const patrols = dayPatrols();
+    const total = spots.length + cases.length + patrols.length;
     countEl.textContent = String(total);
     if (listLabel) {
       listLabel.textContent = selectedHour === "all" ? "titik di tanggal ini" : "titik di jam " + hourChipLabel(selectedHour);
@@ -789,7 +857,20 @@
         );
       }).join("");
     }
-    listEl.innerHTML = html || '<p class="demo-note">Tidak ada hotspot atau penanganan pada ' + (selectedHour === "all" ? "tanggal ini" : "jam ini") + ".</p>";
+    if (patrols.length) {
+      html += '<p class="list-group">Patroli pencegahan</p>';
+      html += patrols.map(function (item) {
+        const on = item.id === selectedId ? " is-on" : "";
+        return (
+          '<button class="hotspot-item' + on + '" type="button" data-id="' + esc(item.id) + '">' +
+            '<span class="pin-mini patroli"><i></i></span>' +
+            '<span class="copy"><b>' + esc(item.lokasi) + '</b><span class="meta">' + esc(item.site) + (item.waktu ? " · " + item.waktu : "") + "</span></span>" +
+            '<span class="badge patroli">' + esc(item.status) + "</span>" +
+          "</button>"
+        );
+      }).join("");
+    }
+    listEl.innerHTML = html || '<p class="demo-note">Tidak ada hotspot, patroli, atau penanganan pada ' + (selectedHour === "all" ? "tanggal ini" : "jam ini") + ".</p>";
   }
 
   function renderMarkers() {
@@ -831,6 +912,28 @@
     });
   }
 
+  function renderPatrolMarkers() {
+    Object.keys(patrolMarkers).forEach(function (id) {
+      map.removeLayer(patrolMarkers[id]);
+      delete patrolMarkers[id];
+    });
+    if (!showPatroli) return;
+    dayPatrols().forEach(function (item) {
+      if (!hasCoord(item)) return;
+      const marker = L.marker([item.lat, item.lng], {
+        icon: patrolIcon(item.id === selectedId),
+        title: item.lokasi + " · " + item.site,
+        zIndexOffset: 650
+      }).addTo(map);
+      marker.bindTooltip(
+        esc(item.lokasi) + "<br>" + esc(item.site) + (item.waktu ? " · " + esc(item.waktu) : "") + "<br>" + esc(item.status),
+        { sticky: true, className: "patroli-tip", direction: "top" }
+      );
+      marker.on("click", function () { select(item.id, true); });
+      patrolMarkers[item.id] = marker;
+    });
+  }
+
   function addRoute(item, emphasize) {
     if (!hasCoord(item) || !Number.isFinite(item.originLat) || !Number.isFinite(item.originLng)) return;
     const color = item.eksternal ? "#ef5a36" : "#86d15c";
@@ -861,6 +964,7 @@
   function findItem(id) {
     if (!id) return null;
     return CASES.find(function (row) { return row.id === id; }) ||
+      PATROLS.find(function (row) { return row.id === id; }) ||
       HOTSPOTS.find(function (row) { return row.id === id; });
   }
 
@@ -971,6 +1075,41 @@
     }
   }
 
+  function renderPatrolDetail(item) {
+    emptyEl.hidden = true;
+    cardEl.hidden = false;
+    detailPane.classList.add("is-open");
+    const coordText = hasCoord(item) ? item.lat.toFixed(6) + ", " + item.lng.toFixed(6) : dash(item.coordRaw);
+    const photos = (item.media && item.media.photos) || [];
+    const gallery = photos.length
+      ? ('<p class="detail-section">Dokumentasi</p><div class="media-gallery">' +
+        photos.map(function (src) {
+          return '<img src="' + esc(src) + '" alt="Dokumentasi patroli ' + esc(item.lokasi) + '">';
+        }).join("") + "</div>")
+      : "";
+    cardEl.innerHTML =
+      "<small>Patroli pencegahan · " + esc(formatDate(item.tanggal)) + (item.week ? " · " + esc(item.week) : "") + "</small>" +
+      "<h2>" + esc(item.lokasi) + "</h2>" +
+      '<p><span class="badge patroli">' + esc(item.status) + "</span></p>" +
+      '<p class="detail-section">Lokasi</p>' +
+      '<div class="detail-grid">' +
+        "<div><span>Site</span><strong>" + esc(item.site) + "</strong></div>" +
+        "<div><span>Waktu</span><strong>" + esc(item.waktu) + "</strong></div>" +
+        "<div class='span-2'><span>Koordinat</span><strong>" + esc(coordText) + "</strong></div>" +
+        "<div class='span-2'><span>Personil</span><strong>" + esc(item.personil) + "</strong></div>" +
+        "<div class='span-2'><span>Keterangan</span><strong>" + esc(item.keterangan) + "</strong></div>" +
+      "</div>" +
+      gallery +
+      (hasCoord(item) ? '<div class="detail-actions"><button type="button" id="focus-spot">Fokus ke titik</button></div>' : "") +
+      '<p class="demo-note">Sumber: form patroli KARHUTLA. <a href="patroli.html">Buka input patroli</a></p>';
+    const focus = document.getElementById("focus-spot");
+    if (focus) {
+      focus.addEventListener("click", function () {
+        map.flyTo([item.lat, item.lng], 13, { duration: 0.8 });
+      });
+    }
+  }
+
   function renderDetail(item) {
     if (!item) {
       emptyEl.hidden = false;
@@ -980,6 +1119,10 @@
     }
     if (item.kind === "kasus") {
       renderCaseDetail(item);
+      return;
+    }
+    if (item.kind === "patroli") {
+      renderPatrolDetail(item);
       return;
     }
     renderSipongiDetail(item);
@@ -992,12 +1135,16 @@
     if (selectedId && HOTSPOTS.some(function (row) { return row.id === selectedId; }) && !visibleIds[selectedId]) {
       selectedId = null;
     }
+    if (selectedId && PATROLS.some(function (row) { return row.id === selectedId; }) && !showPatroli) {
+      selectedId = null;
+    }
     renderDateStrip();
     renderHourStrip();
     renderSummary();
     renderList();
     renderMarkers();
     renderCaseMarkers();
+    renderPatrolMarkers();
     renderRoutes();
     renderDetail(findItem(selectedId));
     if (map.hasLayer(opsLayer)) opsLayer.bringToFront();
@@ -1102,6 +1249,12 @@
         showKasus = !showKasus;
         btn.classList.toggle("is-on", showKasus);
         paint();
+        return;
+      }
+      if (layer === "patroli") {
+        showPatroli = !showPatroli;
+        btn.classList.toggle("is-on", showPatroli);
+        paint();
       }
     });
   });
@@ -1109,16 +1262,25 @@
   opsLayer.addTo(map);
   function startMap() {
     loadCases();
+    loadPatrols();
+    refreshDateKeys(true);
+    renderDateStrip();
     setTimeout(function () {
       map.invalidateSize();
       loadHotspots();
     }, 180);
   }
-  if (window.KarhutlaLaporanStore) {
-    KarhutlaLaporanStore.hydrate().then(startMap).catch(startMap);
-  } else {
-    startMap();
+  function hydrateAll() {
+    const jobs = [];
+    if (window.KarhutlaLaporanStore) jobs.push(KarhutlaLaporanStore.hydrate());
+    if (window.KarhutlaPatroliStore) jobs.push(KarhutlaPatroliStore.hydrate());
+    if (!jobs.length) {
+      startMap();
+      return;
+    }
+    Promise.all(jobs).then(startMap).catch(startMap);
   }
+  hydrateAll();
   setInterval(function () {
     if (selectedDay === "today") loadHotspots();
   }, 5 * 60 * 1000);

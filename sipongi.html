@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Database hotspot SiPongi Kabupaten Berau untuk diunduh ke Excel.">
+  <title>Database SiPongi • KARHUTLA Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="laporan.css">
+  <link rel="stylesheet" href="sipongi.css">
+</head>
+<body class="page-laporan page-sipongi">
+  <canvas class="embers" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="testing.html" aria-label="Berau Coal HSE Beranda">
+      <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
+    </a>
+    <nav class="desktop-nav" aria-label="Navigasi utama">
+      <a href="testing.html">Beranda</a>
+      <a href="hotspot.html">Hotspot</a>
+      <a href="laporan.html">Laporan</a>
+      <a href="patroli.html">Patroli</a>
+      <a class="active" href="javascript:void(0)" aria-current="page">SiPongi</a>
+    </nav>
+    <details class="mobile-menu">
+      <summary aria-label="Buka menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </summary>
+      <nav>
+        <a href="testing.html">Beranda</a>
+        <a href="hotspot.html">Hotspot</a>
+        <a href="laporan.html">Laporan</a>
+        <a href="patroli.html">Patroli</a>
+        <a class="active" href="javascript:void(0)" aria-current="page">SiPongi</a>
+      </nav>
+    </details>
+  </header>
+
+  <main class="lp-main">
+    <div class="lp-hero">
+      <div>
+        <p class="eyebrow">DATABASE HOTSPOT SIPONGI KEMENHUT</p>
+        <h1>Data SiPongi Berau</h1>
+        <p class="lp-lead">Tabel titik hotspot satelit Kabupaten Berau. Pilih rentang tanggal, lalu unduh Excel.</p>
+      </div>
+      <div class="lp-hero-meta">
+        <span class="lp-count" id="sp-count">0 titik</span>
+        <button type="button" class="lp-btn-download" id="sp-download">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M5 19h14"/></svg>
+          Unduh Excel
+        </button>
+        <button type="button" class="lp-btn-new" id="sp-reload">Muat data</button>
+      </div>
+    </div>
+
+    <section class="sp-card">
+      <form class="sp-toolbar" id="sp-form">
+        <label>
+          <span>Dari</span>
+          <input type="date" id="sp-from" required>
+        </label>
+        <label>
+          <span>Sampai</span>
+          <input type="date" id="sp-to" required>
+        </label>
+        <div class="sp-ranges" role="group" aria-label="Rentang cepat">
+          <button type="button" class="sp-range" data-range="1">24 jam</button>
+          <button type="button" class="sp-range is-on" data-range="7">7 hari</button>
+          <button type="button" class="sp-range" data-range="10">10 hari</button>
+          <button type="button" class="sp-range" data-range="30">1 bulan</button>
+        </div>
+        <label class="sp-search">
+          <span>Cari</span>
+          <input type="search" id="sp-search" placeholder="Desa, kecamatan, satelit, konsesi…">
+        </label>
+        <label>
+          <span>Konsesi</span>
+          <select id="sp-konsesi">
+            <option value="semua">Semua</option>
+            <option value="dalam">Dalam konsesi</option>
+            <option value="luar">Luar konsesi</option>
+          </select>
+        </label>
+      </form>
+      <p class="lp-status" id="sp-status" role="status"></p>
+      <div class="sp-table-wrap">
+        <table class="sp-table" id="sp-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Tanggal</th>
+              <th>Jam</th>
+              <th>Desa</th>
+              <th>Kecamatan</th>
+              <th>Kabupaten</th>
+              <th>Satelit</th>
+              <th>Confidence</th>
+              <th>Latitude</th>
+              <th>Longitude</th>
+              <th>Kawasan</th>
+              <th>Konsesi</th>
+            </tr>
+          </thead>
+          <tbody id="sp-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="iupk-boundary.js"></script>
+  <script src="karhutla-data-utils.js"></script>
+  <script src="sipongi.js"></script>
+  <script src="embers.js"></script>
+  <script src="page-fire.js"></script>
+</body>
+</html>

@@ -259,6 +259,7 @@ window.KarhutlaData = (function () {
     mergeCases: mergeCases,
     loadMergedCases: loadMergedCases,
     fetchSipongi: fetchSipongi,
-    pickActiveDay: pickActiveDay
+    pickActiveDay: pickActiveDay,
+    insideIupk: insideIupk
   };
 })();

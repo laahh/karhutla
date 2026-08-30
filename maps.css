@@ -93,6 +93,21 @@
 
 .leaflet-tooltip.sipongi-tip::before { border-top-color: rgba(7, 12, 9, .92); }
 
+.leaflet-tooltip.patroli-tip {
+  padding: 6px 8px;
+  border: 1px solid rgba(74, 163, 255, .5);
+  border-radius: 8px;
+  background: rgba(7, 12, 9, .92);
+  color: #e8eceb;
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .35);
+}
+
+.leaflet-tooltip.patroli-tip::before { border-top-color: rgba(7, 12, 9, .92); }
+
 .glass-panel {
   position: absolute;
   z-index: 4;
@@ -232,7 +247,7 @@
 
 .day-summary {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 6px;
   margin-top: 12px;
 }
@@ -262,6 +277,7 @@
 }
 
 .day-summary article:nth-child(3) strong { color: #ff8a70; }
+.day-summary article:nth-child(4) strong { color: #6ec8ff; }
 
 .scope-tabs {
   display: flex;
@@ -327,6 +343,7 @@
 }
 
 .dot.kasus { background: #ef5a36; color: #ef5a36; }
+.dot.patroli { background: #4aa3ff; color: #4aa3ff; }
 
 .pin.kasus { color: #ef5a36; width: 26px; height: 26px; }
 .pin.kasus .pin-core {
@@ -344,6 +361,13 @@
 }
 .pin.internal .pin-ring { border-radius: 3px; }
 
+.pin.patroli { color: #4aa3ff; width: 24px; height: 24px; }
+.pin.patroli .pin-core {
+  inset: 6px;
+  border-radius: 50%;
+}
+.pin.patroli .pin-ring { border-radius: 50%; }
+
 .pin.base { color: #f4f5f5; width: 18px; height: 18px; }
 .pin.base .pin-core { inset: 5px; border-radius: 2px; }
 .pin.base .pin-ring { animation: none; opacity: .55; border-radius: 2px; }
@@ -360,8 +384,15 @@
   border-color: rgba(107, 180, 67, .42);
 }
 .hotspot-item .pin-mini.internal i { background: #86d15c; }
+.hotspot-item .pin-mini.patroli {
+  color: #6ec8ff;
+  background: rgba(74, 163, 255, .12);
+  border-color: rgba(74, 163, 255, .42);
+}
+.hotspot-item .pin-mini.patroli i { background: #4aa3ff; }
 .badge.kasus { color: #ff8a70; border: 1px solid rgba(239, 90, 54, .5); }
 .badge.internal { color: #9adf74; border: 1px solid rgba(107, 180, 67, .5); }
+.badge.patroli { color: #6ec8ff; border: 1px solid rgba(74, 163, 255, .5); }
 
 .sat-grid {
   display: grid;
@@ -781,6 +812,14 @@
   font-size: 11px;
 }
 
+.demo-note a {
+  color: #6ec8ff;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.demo-note a:hover { text-decoration: underline; }
+
 .media-gallery {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -823,12 +862,12 @@
   right: calc(var(--pad) + var(--hud-right) + var(--hud-gap));
   bottom: 18px;
   min-height: 0;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .page-app .map-legend-bar {
   min-height: 0;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .map-legend-bar article {

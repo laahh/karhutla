@@ -262,6 +262,8 @@ html:has(.page-tahap) {
   font-size: clamp(11px, 1.25vh, 13px);
   font-weight: 650;
   line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
   transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
 

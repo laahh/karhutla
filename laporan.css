@@ -146,6 +146,11 @@ html:has(.page-laporan) {
   box-shadow: 0 0 0 3px rgba(107, 180, 67, .18);
 }
 
+.lp-form-card input[readonly] {
+  opacity: .85;
+  cursor: default;
+}
+
 .lp-form-card input[type="date"],
 .lp-form-card input[type="time"],
 .lp-form-card input[type="number"],
@@ -250,6 +255,30 @@ html:has(.page-laporan) {
   color: #b7bcbd;
   font-size: 12px;
   line-height: 1.35;
+}
+
+.lp-pill {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.lp-pill-ok {
+  background: rgba(107, 180, 67, .2);
+  color: #c6e89a;
+}
+
+.lp-pill-warn {
+  background: rgba(255, 178, 90, .18);
+  color: #ffd59a;
+}
+
+.lp-pill-hot {
+  background: rgba(239, 90, 54, .2);
+  color: #ff8a70;
 }
 
 .lp-photos {
