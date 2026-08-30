@@ -1,9 +1,16 @@
 (function () {
-  const SIPONGI_APIS = [
-    "https://opsroom-sipongi.gakkum.kehutanan.go.id",
-    "https://opsroom.sipongidata.my.id"
+  const SIPONGI_UPSTREAM = [
+    "https://opsroom-sipongi.gakkum.kehutanan.go.id/api/opsroom/indoHotspot",
+    "https://opsroom.sipongidata.my.id/api/opsroom/indoHotspot"
   ];
   const PROVINSI_KALTIM = "14";
+  function isStaticLocal() {
+    const host = location.hostname;
+    return !host || host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  }
+  function sipongiEndpoints() {
+    return isStaticLocal() ? SIPONGI_UPSTREAM.slice() : ["/api/sipongi"];
+  }
   const SATS = [
     { id: "terra", label: "TERRA/AQUA", sumber: ["NASA-MODIS", "LPN-MODIS"] },
     { id: "snpp", label: "SNPP", sumber: ["NASA-SNPP", "LPN-NPP"] },
@@ -472,7 +479,8 @@
   }
 
   async function fetchFrom(base) {
-    const res = await fetch(base + "/api/opsroom/indoHotspot?" + buildQuery());
+    const join = base.indexOf("?") >= 0 ? "&" : "?";
+    const res = await fetch(base + join + buildQuery(), { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     if (!json || !Array.isArray(json.features)) throw new Error("Format data tidak dikenali");
@@ -763,9 +771,10 @@
     loadingEl.hidden = false;
     refreshBtn.disabled = true;
     let lastError = null;
-    for (let i = 0; i < SIPONGI_APIS.length; i += 1) {
+    const endpoints = sipongiEndpoints();
+    for (let i = 0; i < endpoints.length; i += 1) {
       try {
-        const features = await fetchFrom(SIPONGI_APIS[i]);
+        const features = await fetchFrom(endpoints[i]);
         HOTSPOTS = features
           .map(mapFeature)
           .filter(function (item) {

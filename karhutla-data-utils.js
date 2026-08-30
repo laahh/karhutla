@@ -3,12 +3,21 @@
 // the exact logic hotspot-map.js uses on /hotspot.html so every page that
 // includes this file agrees on the same numbers.
 window.KarhutlaData = (function () {
-  const SIPONGI_APIS = [
-    "https://opsroom-sipongi.gakkum.kehutanan.go.id",
-    "https://opsroom.sipongidata.my.id"
+  const SIPONGI_UPSTREAM = [
+    "https://opsroom-sipongi.gakkum.kehutanan.go.id/api/opsroom/indoHotspot",
+    "https://opsroom.sipongidata.my.id/api/opsroom/indoHotspot"
   ];
   const PROVINSI_KALTIM = "14";
   const MATCH_KM = 3;
+
+  function isStaticLocal() {
+    const host = location.hostname;
+    return !host || host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  }
+
+  function sipongiEndpoints() {
+    return isStaticLocal() ? SIPONGI_UPSTREAM.slice() : ["/api/sipongi"];
+  }
 
   function todayKey() {
     const n = new Date();
@@ -219,7 +228,8 @@ window.KarhutlaData = (function () {
   }
 
   async function fetchFrom(base, from, to) {
-    const res = await fetch(base + "/api/opsroom/indoHotspot?" + buildQuery(from, to));
+    const join = base.indexOf("?") >= 0 ? "&" : "?";
+    const res = await fetch(base + join + buildQuery(from, to), { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     if (!json || !Array.isArray(json.features)) throw new Error("Format data tidak dikenali");
@@ -229,9 +239,10 @@ window.KarhutlaData = (function () {
   // Fetches SiPongi hotspots for a date range (or "last 24h" when from/to are
   // omitted) and returns only the Berau features, trying each mirror in turn.
   async function fetchSipongi(from, to) {
-    for (let i = 0; i < SIPONGI_APIS.length; i += 1) {
+    const endpoints = sipongiEndpoints();
+    for (let i = 0; i < endpoints.length; i += 1) {
       try {
-        const features = await fetchFrom(SIPONGI_APIS[i], from, to);
+        const features = await fetchFrom(endpoints[i], from, to);
         return features.filter(function (f) {
           const p = f.properties || {};
           return String(p.kabkota).toLowerCase() === "berau";

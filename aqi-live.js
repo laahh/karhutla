@@ -282,21 +282,30 @@
     }).filter(Boolean);
   }
 
+  function isStaticLocal() {
+    const host = location.hostname;
+    return !host || host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  }
+
   async function fetchStations() {
-    try {
-      const res = await fetch("aqi-station.php", { cache: "no-store" });
-      if (res.ok) {
+    const urls = isStaticLocal()
+      ? ["https://ispu.kemenlh.go.id/apimobile/v1/getStations"]
+      : ["/api/ispu"];
+    for (let i = 0; i < urls.length; i += 1) {
+      try {
+        const res = await fetch(urls[i], { cache: "no-store" });
+        if (!res.ok) continue;
         const data = await res.json();
         if (data && data.ok && data.stations && data.stations.length) {
           return data.stations;
         }
-      }
-    } catch (e) { /* fall through to KLHK direct */ }
-
-    const res = await fetch("https://ispu.kemenlh.go.id/apimobile/v1/getStations");
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    return normalizeKlhkRows(data.rows);
+        if (data && Array.isArray(data.rows)) {
+          const rows = normalizeKlhkRows(data.rows);
+          if (rows.length) return rows;
+        }
+      } catch (e) { /* try next same-origin source */ }
+    }
+    throw new Error("Stasiun tidak termuat");
   }
 
   function renderStation(st) {
@@ -330,16 +339,31 @@
     abortCtrl = new AbortController();
     setLoading(true);
 
-    const url = "https://air-quality-api.open-meteo.com/v1/air-quality"
-      + "?latitude=" + encodeURIComponent(loc.lat)
+    const qs = "latitude=" + encodeURIComponent(loc.lat)
       + "&longitude=" + encodeURIComponent(loc.lon)
       + "&current=us_aqi,pm2_5,pm10"
       + "&timezone=auto";
+    const urls = isStaticLocal()
+      ? ["https://air-quality-api.open-meteo.com/v1/air-quality?" + qs]
+      : ["/api/air-quality?" + qs];
 
     try {
-      const res = await fetch(url, { signal: abortCtrl.signal });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
+      let data = null;
+      let lastErr = null;
+      for (let i = 0; i < urls.length; i += 1) {
+        try {
+          const res = await fetch(urls[i], { signal: abortCtrl.signal, cache: "no-store" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const json = await res.json();
+          if (!json || !json.current) throw new Error("Format data tidak dikenali");
+          data = json;
+          break;
+        } catch (err) {
+          if (err && err.name === "AbortError") throw err;
+          lastErr = err;
+        }
+      }
+      if (!data) throw lastErr || new Error("Gagal memuat kualitas udara");
       const current = data.current || {};
       const aqi = current.us_aqi;
       const level = levelFromAqi(aqi);
