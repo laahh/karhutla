@@ -23,39 +23,36 @@
 
   document.querySelectorAll(".dash-stat strong[data-count]").forEach(countUp);
 
-  const DEFAULT_TREND_LABELS = ["10-Aug", "11-Aug", "13-Aug", "14-Aug", "15-Aug", "18-Aug", "17-Aug", "18-Aug", "19-Aug", "21-Aug", "22-Aug", "23-Aug", "24-Aug"];
-  const DEFAULT_TREND_INTERNAL = [1, 1, 2, 1, 6, 2, 1, 2, 1, 4, 1, 4, 1];
-  const DEFAULT_TREND_EXTERNAL = [0, 0, 3, 3, 1, 0, 0, 2, 2, 3, 4, 0, 1];
-
-  let TREND_LABELS = DEFAULT_TREND_LABELS;
-  let TREND_INTERNAL = DEFAULT_TREND_INTERNAL;
-  let TREND_EXTERNAL = DEFAULT_TREND_EXTERNAL;
-  // Optional real "Hotspot Aktif" counts (e.g. live SiPongi data), plotted
-  // against their own right-axis scale instead of the internal/external
-  // bars' 0-7 scale. Set via window.setTrendData(); null keeps the original
-  // behavior of just plotting the internal+external stack height.
+  let TREND_LABELS = [];
+  let TREND_INTERNAL = [];
+  let TREND_EXTERNAL = [];
   let TREND_ACTIVE = null;
+
+  function showTrendLoading() {
+    const holder = document.getElementById("trend-chart");
+    if (!holder) return;
+    holder.innerHTML = '<p class="trend-loading">Memuat data tren…</p>';
+  }
 
   function renderTrend() {
     const holder = document.getElementById("trend-chart");
     if (!holder) return;
 
+    const n = TREND_LABELS.length;
+    if (!n) {
+      showTrendLoading();
+      return;
+    }
+
     const rect = holder.getBoundingClientRect();
     const containerW = rect.width || 640;
     const containerH = rect.height || 250;
-    // W stays fixed so each bar/label keeps the same internal spacing regardless
-    // of container width; H is derived to match the container's aspect ratio so
-    // the chart fills the panel's height instead of leaving it letterboxed.
     const W = 640;
     const H = Math.max(160, Math.round(W * (containerH / containerW)));
     const ML = 30, MR = 34, MT = 10, MB = 26;
     const plotW = W - ML - MR;
     const plotH = H - MT - MB;
-    const n = TREND_LABELS.length;
-    if (!n) {
-      holder.innerHTML = "";
-      return;
-    }
+
     let barMax = 0;
     for (let i = 0; i < n; i += 1) {
       barMax = Math.max(barMax, (Number(TREND_INTERNAL[i]) || 0) + (Number(TREND_EXTERNAL[i]) || 0));
@@ -66,7 +63,6 @@
       : 700;
     const groupW = plotW / n;
     const barW = Math.min(groupW * 0.62, 42);
-
     const yPix = function (v) { return MT + plotH - (v / yMax) * plotH; };
     const yPixActive = function (v) { return MT + plotH - (v / activeMax) * plotH; };
 
@@ -77,18 +73,19 @@
       const v = i * yMax / 7;
       const y = yPix(v);
       gridLines += '<line class="grid-line" x1="' + ML + '" x2="' + (ML + plotW) + '" y1="' + y + '" y2="' + y + '"/>';
-      leftTicks += '<text class="axis-tick" x="' + (ML - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + (yMax <= 7 ? i.toFixed(1).replace(".", ",") : String(Math.round(v))) + '</text>';
-      rightTicks += '<text class="axis-tick" x="' + (ML + plotW + 8) + '" y="' + (y + 3) + '" text-anchor="start">' + Math.round(i * activeMax / 7) + '</text>';
+      leftTicks += '<text class="axis-tick" x="' + (ML - 6) + '" y="' + (y + 3) + '" text-anchor="end">' +
+        (yMax <= 7 ? i.toFixed(1).replace(".", ",") : String(Math.round(v))) + "</text>";
+      rightTicks += '<text class="axis-tick" x="' + (ML + plotW + 8) + '" y="' + (y + 3) + '" text-anchor="start">' +
+        Math.round(i * activeMax / 7) + "</text>";
     }
 
     let bars = "", xLabels = "", linePoints = [], lineValues = "";
     for (let i = 0; i < n; i++) {
       const gx = ML + i * groupW;
       const bx = gx + (groupW - barW) / 2;
-      const internal = TREND_INTERNAL[i];
-      const external = TREND_EXTERNAL[i];
+      const internal = Number(TREND_INTERNAL[i]) || 0;
+      const external = Number(TREND_EXTERNAL[i]) || 0;
       const total = internal + external;
-
       const yInternalTop = yPix(internal);
       const yTotalTop = yPix(total);
       const baseY = yPix(0);
@@ -101,22 +98,22 @@
       }
       bars += "</g>";
       if (internal > 0) {
-        bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (bx + barW / 2) + '" y="' + (baseY - 3) + '">' + internal + '</text>';
+        bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (bx + barW / 2) + '" y="' + (baseY - 3) + '">' + internal + "</text>";
       }
       if (external > 0) {
-        bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (bx + barW / 2) + '" y="' + (yTotalTop + (yInternalTop - yTotalTop) / 2 + 3) + '">' + external + '</text>';
+        bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (bx + barW / 2) + '" y="' + (yTotalTop + (yInternalTop - yTotalTop) / 2 + 3) + '">' + external + "</text>";
       }
 
       const showLabel = n <= 12 || i === 0 || i === n - 1 || i % (n > 20 ? 3 : 2) === 0;
       if (showLabel) {
-        xLabels += '<text class="x-label" x="' + (gx + groupW / 2) + '" y="' + (H - 6) + '">' + TREND_LABELS[i] + '</text>';
+        xLabels += '<text class="x-label" x="' + (gx + groupW / 2) + '" y="' + (H - 6) + '">' + TREND_LABELS[i] + "</text>";
       }
 
       const lineVal = TREND_ACTIVE ? TREND_ACTIVE[i] : total;
       const lx = gx + groupW / 2;
       const ly = TREND_ACTIVE ? yPixActive(lineVal) : yPix(lineVal);
       linePoints.push(lx + "," + ly);
-      lineValues += '<text class="line-value" style="animation-delay:' + (650 + i * 25) + 'ms" x="' + lx + '" y="' + (ly - 10) + '">' + lineVal + '</text>';
+      lineValues += '<text class="line-value" style="animation-delay:' + (650 + i * 25) + 'ms" x="' + lx + '" y="' + (ly - 10) + '">' + lineVal + "</text>";
     }
 
     let lineDots = "";
@@ -125,11 +122,11 @@
       lineDots += '<circle class="line-dot" style="animation-delay:' + (650 + i * 25) + 'ms" cx="' + parts[0] + '" cy="' + parts[1] + '" r="2.6"/>';
     });
 
-    const linePath = '<polyline class="line-path" points="' + linePoints.join(" ") + '"/>';
-
     holder.innerHTML =
       '<svg class="chart-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
-        gridLines + leftTicks + rightTicks + bars + linePath + lineDots + lineValues + xLabels +
+        gridLines + leftTicks + rightTicks + bars +
+        '<polyline class="line-path" points="' + linePoints.join(" ") + '"/>' +
+        lineDots + lineValues + xLabels +
       "</svg>";
   }
 
@@ -175,7 +172,7 @@
     }).join("");
   }
 
-  renderTrend();
+  showTrendLoading();
   renderDonut();
 
   let resizeTimer = null;
@@ -184,9 +181,7 @@
     resizeTimer = setTimeout(renderTrend, 150);
   });
 
-  // Lets other scripts (e.g. live SiPongi wiring on index.html) swap in
-  // real data and re-render, without the default demo data ever
-  // being touched unless this is actually called.
+  // Live SiPongi + laporan wiring fills the chart via setTrendData.
   window.setTrendData = function (labels, internalArr, externalArr, activeArr) {
     TREND_LABELS = labels;
     TREND_INTERNAL = internalArr;
