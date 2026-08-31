@@ -184,8 +184,8 @@
     resizeTimer = setTimeout(renderTrend, 150);
   });
 
-  // Lets other scripts (e.g. live SiPongi wiring on testing.html) swap in
-  // real data and re-render, without index.html's default demo data ever
+  // Lets other scripts (e.g. live SiPongi wiring on index.html) swap in
+  // real data and re-render, without the default demo data ever
   // being touched unless this is actually called.
   window.setTrendData = function (labels, internalArr, externalArr, activeArr) {
     TREND_LABELS = labels;

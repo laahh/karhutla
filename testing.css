@@ -1,4 +1,4 @@
-/* Page-specific overrides for testing.html — layered on top of dashboard.css. */
+/* Page-specific overrides for the beranda (index.html) — layered on top of dashboard.css. */
 
 @media (min-width: 1101px) {
   /* Unify the 5 stat cards into a single blended panel instead of separate boxes. */

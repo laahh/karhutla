@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="testing.css">
 </head>
 <body class="page-home">
 <main>
@@ -29,7 +30,7 @@
         <span>BERAU COAL</span><i>·</i><strong>OHS </strong>
       </a>
       <nav class="desktop-nav" aria-label="Navigasi utama">
-        <a href="testing.html">Beranda</a>
+        <a class="active" href="index.html" aria-current="page">Beranda</a>
         <a href="hotspot.html">Hotspot</a>
         <a href="laporan.html">Laporan</a>
         <a href="patroli.html">Patroli</a>
@@ -44,7 +45,7 @@
           <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </summary>
         <nav>
-          <a href="testing.html">Beranda</a>
+          <a class="active" href="index.html" aria-current="page">Beranda</a>
           <a href="hotspot.html">Hotspot</a>
           <a href="laporan.html">Laporan</a>
           <a href="patroli.html">Patroli</a>
@@ -55,7 +56,7 @@
 
     <div class="hero-body">
      <div class="hero-main">
-      <div class="hero-copy">
+      <div class="hero-copy" style="margin-top: 20px;">
         <div class="alert-chip">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 21.5 20H2.5L12 3.2Z"/><path d="M12 10v4.2"/><path d="M12 17.2v.6"/></svg>
           SIAGA KARHUTLA <b>·</b> MUSIM KEMARAU 2026
@@ -75,58 +76,90 @@
         </div>
       </div>
 
-      <aside class="live-card">
-        <span class="pulse"></span>
-        <div>
-          <small>STATUS TERKINI</small>
-          <p>Pemantauan aktif 24/7</p>
+      <aside class="live-card live-card--aqi" id="aqi-card" data-level="unknown" data-slide="0" data-scale="us">
+        <div class="aqi-head">
+          <span class="pulse" aria-hidden="true"></span>
+          <div class="aqi-head-text">
+            <small>INDEKS KUALITAS UDARA</small>
+            <p class="aqi-source" id="aqi-source">Open-Meteo · model</p>
+          </div>
         </div>
-        <div class="radar" aria-hidden="true"><span></span></div>
+
+        <div class="aqi-viewport" id="aqi-viewport">
+          <div class="aqi-track" id="aqi-track">
+            <section class="aqi-slide" data-source="meteo" aria-label="Open-Meteo">
+              <label class="aqi-loc">
+                <span class="sr-only">Pilih lokasi model</span>
+                <select id="aqi-location" aria-label="Pilih lokasi kualitas udara Open-Meteo"></select>
+              </label>
+              <div class="aqi-body" aria-live="polite">
+                <div class="aqi-score">
+                  <strong id="aqi-value">–</strong>
+                  <span id="aqi-unit">US AQI</span>
+                </div>
+                <div class="aqi-meta">
+                  <p id="aqi-category">Memuat data…</p>
+                  <small id="aqi-detail">PM2.5 —</small>
+                </div>
+              </div>
+              <div class="aqi-scale" aria-hidden="true">
+                <span data-band="good"></span>
+                <span data-band="moderate"></span>
+                <span data-band="sensitive"></span>
+                <span data-band="unhealthy"></span>
+                <span data-band="very"></span>
+                <span data-band="hazard"></span>
+              </div>
+              <p class="aqi-updated" id="aqi-updated">Menghubungkan ke Open-Meteo…</p>
+            </section>
+
+            <section class="aqi-slide" data-source="station" aria-label="Stasiun BMKG dan KLHK">
+              <label class="aqi-loc">
+                <span class="sr-only">Pilih stasiun BMKG atau KLHK</span>
+                <select id="aqi-station" aria-label="Pilih stasiun BMKG atau KLHK"></select>
+              </label>
+              <div class="aqi-body" aria-live="polite">
+                <div class="aqi-score">
+                  <strong id="aqi-st-value">–</strong>
+                  <span id="aqi-st-unit">ISPU</span>
+                </div>
+                <div class="aqi-meta">
+                  <p id="aqi-st-category">Memuat stasiun…</p>
+                  <small id="aqi-st-detail">PM2.5 —</small>
+                </div>
+              </div>
+              <div class="aqi-scale aqi-scale--ispu" aria-hidden="true">
+                <span data-band="good"></span>
+                <span data-band="moderate"></span>
+                <span data-band="unhealthy"></span>
+                <span data-band="very"></span>
+                <span data-band="hazard"></span>
+              </div>
+              <p class="aqi-updated" id="aqi-st-updated">Menghubungkan ke stasiun BMKG / KLHK…</p>
+            </section>
+          </div>
+        </div>
+
+        <div class="aqi-pager">
+          <button type="button" class="aqi-arrow" id="aqi-prev" aria-label="Sumber sebelumnya">‹</button>
+          <div class="aqi-tabs" role="tablist" aria-label="Sumber data kualitas udara">
+            <button type="button" class="is-active" role="tab" data-slide="0" aria-selected="true">Open-Meteo</button>
+            <button type="button" role="tab" data-slide="1" aria-selected="false">BMKG / KLHK</button>
+          </div>
+          <button type="button" class="aqi-arrow" id="aqi-next" aria-label="Sumber berikutnya">›</button>
+        </div>
       </aside>
     </div>
 
-    <div class="hero-footer">
-      <div class="metric-panel" id="hotspot">
-        <article>
-          <span class="metric-icon orange">
-            <svg viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.7 7-6.4 0-2.7-1.5-5.2-4.4-7.6.1 2-1 3.1-2.1 3.8.3-3.4-1.4-6.4-4.5-8.8.2 3.1-1.8 5.3-3 7.4C3.8 12.3 5 15.2 5 16c0 3.3 3.1 6 7 6Z"/></svg>
-          </span>
-          <div>
-            <small>Hotspot Aktif</small>
-            <strong>11</strong>
-            <p>Titik</p>
-          </div>
-        </article>
-        <article>
-          <span class="metric-icon orange">
-            <svg viewBox="0 0 24 24"><path d="M12 3.2 21.5 20H2.5L12 3.2Z"/><path d="M12 10v4.2"/><path d="M12 17.2v.6"/></svg>
-          </span>
-          <div>
-            <small>Total Penanganan</small>
-            <strong>35</strong>
-            <p>Penanganan</p>
-          </div>
-        </article>
-        <article>
-          <span class="metric-icon green">
-            <svg viewBox="0 0 24 24"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>
-          </span>
-          <div>
-            <small>Area Terpantau</small>
-            <strong>8</strong>
-            <p>Area</p>
-          </div>
-        </article>
-      </div>
-    </div>
+   
     </div>
   </section>
 
   <section class="dash" id="aktual">
-    <div class="dash-head">
+    <!-- <div class="dash-head">
       <h2>Aktual Pengendalian Karhutla</h2>
       <p>Kesiapan pengendalian sudah optimal dengan 237 item peralatan kondisi baik, 94 personel ER, 25 unit pendukung, serta implementasi patroli 100%.</p>
-    </div>
+    </div> -->
 
     <div class="dash-stats">
       <article class="dash-stat">
@@ -135,7 +168,7 @@
           <p>Item Peralatan Good</p>
           <span>Fire truck, hose, nozzle, pump</span>
         </div>
-        <span class="dash-stat-icon tone-orange">
+        <span class="dash-stat-icon tone-green">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16V9h11v7"/><path d="M14 12h4.2L21 16v3h-2"/><circle cx="7" cy="18.5" r="2"/><circle cx="16.5" cy="18.5" r="2"/></svg>
         </span>
       </article>
@@ -151,21 +184,21 @@
       </article>
       <article class="dash-stat">
         <div>
-          <strong class="tone-orange" data-count="3">0</strong>
+          <strong class="tone-green" data-count="30"  style="color: greenyellow;">0</strong>
           <p>Fire Volunteer / Hari</p>
           <span>Target standby mitra kerja</span>
         </div>
-        <span class="dash-stat-icon tone-orange">
+        <span class="dash-stat-icon tone-green">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="16" cy="9" r="2.4"/><path d="M4 19c.4-3.2 2.8-5 5-5s4.6 1.8 5 5"/></svg>
         </span>
       </article>
       <article class="dash-stat">
         <div>
-          <strong class="tone-orange" data-count="25">0</strong>
+          <strong class="tone-green" data-count="25" style="color: greenyellow;">0</strong>
           <p>Unit Pendukung</p>
           <span>Fire truck, rescue &amp; LV support</span>
         </div>
-        <span class="dash-stat-icon tone-orange">
+        <span class="dash-stat-icon tone-green">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16V9h11v7"/><path d="M14 12h4.2L21 16v3h-2"/><circle cx="7" cy="18.5" r="2"/><circle cx="16.5" cy="18.5" r="2"/></svg>
         </span>
       </article>
@@ -183,13 +216,20 @@
 
     <div class="dash-grid">
       <article class="dash-panel dash-trend">
-        <header>
-          <h3>Trend Hotspot dan Karhutla</h3>
-          <p>Titik Karhutla Aman dan Terkendali</p>
+        <header class="dash-trend-head">
+          <div>
+            <h3>Trend Hotspot dan Karhutla</h3>
+            <p>Titik Karhutla Aman dan Terkendali</p>
+          </div>
+          <div class="trend-range" role="group" aria-label="Rentang grafik">
+            <button type="button" class="trend-range-btn" data-range="7">1 minggu</button>
+            <button type="button" class="trend-range-btn is-on" data-range="10">10 hari</button>
+            <button type="button" class="trend-range-btn" data-range="30">1 bulan</button>
+          </div>
         </header>
-        <div class="trend-chart" id="trend-chart" role="img" aria-label="Grafik tren hotspot dan karhutla 10-24 Agustus 2026"></div>
+        <div class="trend-chart" id="trend-chart" role="img" aria-label="Grafik tren hotspot dan karhutla sesuai data laporan"></div>
         <ul class="dash-legend">
-          <li><i class="dot dot-line"></i> Hotspot Aktif</li>
+          <li><i class="dot dot-line"></i>Trend Hotspot Aktif</li>
           <li><i class="dot dot-blue"></i> Karhutla Internal</li>
           <li><i class="dot dot-orange"></i> Karhutla Eksternal</li>
         </ul>
@@ -200,7 +240,9 @@
           <h3>Komposisi Peralatan Good</h3>
           <p>237 item good condition</p>
         </header>
-        <div class="donut-wrap" id="donut-chart" role="img" aria-label="Komposisi peralatan kondisi baik"></div>
+        <div class="donut-spin">
+          <div class="donut-wrap" id="donut-chart" role="img" aria-label="Komposisi peralatan kondisi baik"></div>
+        </div>
         <ul class="dash-legend dash-legend--grid" id="donut-legend"></ul>
       </article>
 
@@ -210,35 +252,48 @@
           <span class="status-radar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg></span>
         </header>
         <div class="status-main">
-          <strong>0</strong>
+          <strong id="live-titik-aktif">–</strong>
           <div>
             <p>Titik Aktif</p>
-            <small>Per 24 Agustus 2026</small>
+            <div class="status-date-nav" id="status-date-nav">
+              <button type="button" class="status-date-btn" id="status-date-prev" aria-label="Tanggal sebelumnya">‹</button>
+              <label class="status-date-label">
+                <small id="live-per-tanggal">Memuat data SiPongi…</small>
+                <input type="date" id="status-date-input" class="status-date-input" aria-label="Pilih tanggal">
+              </label>
+              <button type="button" class="status-date-btn" id="status-date-next" aria-label="Tanggal berikutnya">›</button>
+            </div>
           </div>
         </div>
         <div class="status-split">
-          <div><small>Internal</small><strong>0</strong></div>
-          <div><small>Eksternal</small><strong>0</strong></div>
+          <div><small>Internal</small><strong id="live-internal">27</strong></div>
+          <div><small>Eksternal</small><strong id="live-eksternal">8</strong></div>
         </div>
-        <p class="status-note">Kondisi saat ini sudah zero titik aktif. Tetap fokus pada patroli pencegahan dan validasi lapangan.</p>
+        <p class="status-note" id="live-status-note">Menghubungkan ke SiPongi Kemenhut…</p>
+
+        <div class="status-more">
+          <div class="status-more-item">
+            <div class="status-more-head">
+              <small>Implementasi Patroli</small>
+              <strong class="tone-green">100%</strong>
+            </div>
+            <div class="mini-bar"><span style="width:100%"></span></div>
+            <p>178/178 status Aman</p>
+          </div>
+
+          <div class="status-more-item">
+            <div class="status-more-head">
+              <small>Inspeksi Sekat Bakar</small>
+              <strong>57</strong>
+            </div>
+            <p>Lokasi diinspeksi</p>
+            <div class="mini-chips">
+              <span class="chip chip-green">Aman <b>57</b></span>
+              <span class="chip">Gap <b>0</b></span>
+            </div>
+          </div>
+        </div>
       </aside>
-
-      <article class="dash-mini">
-        <small>Implementasi Patroli</small>
-        <strong class="tone-green">100%</strong>
-        <div class="mini-bar"><span style="width:100%"></span></div>
-        <p>178/178 status Aman</p>
-      </article>
-
-      <article class="dash-mini">
-        <small>Inspeksi Sekat Bakar</small>
-        <strong>57</strong>
-        <p>Lokasi diinspeksi</p>
-        <div class="mini-chips">
-          <span class="chip chip-green">Aman <b>57</b></span>
-          <span class="chip">Gap <b>0</b></span>
-        </div>
-      </article>
     </div>
   </section>
 </main>
@@ -246,5 +301,13 @@
 <script src="embers.js"></script>
 <script src="page-fire.js"></script>
 <script src="dashboard.js"></script>
+<script src="iupk-boundary.js"></script>
+<script src="kasus-data.js"></script>
+<script src="laporan-data.js"></script>
+<script src="laporan-store.js"></script>
+<script src="karhutla-data-utils.js"></script>
+<script src="hotspot-status-live.js"></script>
+<script src="trend-hotspot-live.js"></script>
+<script src="aqi-live.js"></script>
 </body>
 </html>
