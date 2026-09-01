@@ -153,6 +153,11 @@ window.KarhutlaPatroliStore = (function () {
     });
   }
 
+  function useRemoteApi() {
+    const host = location.hostname;
+    return !!host && host !== "localhost" && host !== "127.0.0.1" && host !== "[::1]";
+  }
+
   async function fetchApi(url, options) {
     const res = await fetch(url, options);
     const json = await res.json().catch(function () { return null; });
@@ -161,14 +166,16 @@ window.KarhutlaPatroliStore = (function () {
 
   async function hydrate() {
     let apiData = null;
-    try {
-      const got = await fetchApi(API, { method: "GET", cache: "no-store" });
-      if (got.json && got.json.ok && got.json.data) {
-        persistent = !!got.json.persistent;
-        apiData = got.json.data;
+    if (useRemoteApi()) {
+      try {
+        const got = await fetchApi(API, { method: "GET", cache: "no-store" });
+        if (got.json && got.json.ok && got.json.data) {
+          persistent = !!got.json.persistent;
+          apiData = got.json.data;
+        }
+      } catch (err) {
+        persistent = false;
       }
-    } catch (err) {
-      persistent = false;
     }
 
     if (persistent && apiData) {
