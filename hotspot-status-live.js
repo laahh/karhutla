@@ -96,6 +96,11 @@
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
   }
 
+  function featureInKonsesi(feature) {
+    const xy = featureCoord(feature);
+    return Number.isFinite(xy.lat) && Number.isFinite(xy.lng) && KD.insideIupk(xy.lat, xy.lng);
+  }
+
   function hotspotCovered(feature, patrols, day) {
     const xy = featureCoord(feature);
     const key = Number.isFinite(xy.lat) && Number.isFinite(xy.lng)
@@ -126,10 +131,11 @@
 
   function paintPatroli(features, day) {
     const patrols = patrolsOnDay(day);
-    const hotspotN = features ? features.length : 0;
+    const konsesi = features ? features.filter(featureInKonsesi) : null;
+    const hotspotN = konsesi ? konsesi.length : 0;
     let covered = 0;
-    if (features) {
-      features.forEach(function (feature) {
+    if (konsesi) {
+      konsesi.forEach(function (feature) {
         if (hotspotCovered(feature, patrols, day)) covered += 1;
       });
     }
@@ -137,7 +143,7 @@
     const pctText = hotspotN || patrols.length ? pct + "%" : "–";
     const statusBit = patrols.length ? statusSummary(patrols) : "belum ada patroli";
     const detail = hotspotN
-      ? covered + "/" + hotspotN + " titik dipatroli · " + statusBit
+      ? covered + "/" + hotspotN + " titik konsesi dipatroli · " + statusBit
       : patrols.length + " patroli · " + statusBit;
 
     if (statPctEl) statPctEl.textContent = pctText;
