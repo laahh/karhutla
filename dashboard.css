@@ -267,8 +267,16 @@
   flex-direction: column;
   min-height: 0;
   overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border-color: rgba(134, 209, 92, .48);
   box-shadow: 0 0 22px rgba(107, 180, 67, .08);
+}
+
+.dash-status::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .dash-status header {
