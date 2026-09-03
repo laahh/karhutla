@@ -1,6 +1,7 @@
 (function () {
   const SIPONGI_UPSTREAM = [
     "https://opsroom-sipongi.gakkum.kehutanan.go.id/api/opsroom/indoHotspot",
+    "https://mirror-opsroom.sipongidata.my.id/api/opsroom/indoHotspot",
     "https://opsroom.sipongidata.my.id/api/opsroom/indoHotspot"
   ];
   const PROVINSI_KALTIM = "14";

@@ -1,7 +1,21 @@
 {
+  "regions": ["sin1"],
   "functions": {
     "api/laporan.js": {
-      "includeFiles": "laporan-data.js"
+      "includeFiles": "laporan-data.js",
+      "maxDuration": 10
+    },
+    "api/sipongi.js": {
+      "maxDuration": 10
+    },
+    "api/patroli.js": {
+      "maxDuration": 10
+    },
+    "api/air-quality.js": {
+      "maxDuration": 10
+    },
+    "api/ispu.js": {
+      "maxDuration": 10
     }
   }
 }

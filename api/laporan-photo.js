@@ -86,8 +86,9 @@ module.exports = async function handler(req, res) {
     });
     send(res, 200, { ok: true, url: blob.url, pathname: blob.pathname });
   } catch (err) {
-    send(res, 500, {
+    send(res, 503, {
       ok: false,
+      persistent: false,
       error: err && err.message ? err.message : "Gagal mengunggah foto."
     });
   }

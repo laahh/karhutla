@@ -31,26 +31,30 @@ function normalize(data) {
 
 async function readStore() {
   if (!hasBlob()) return { persistent: false, data: emptyStore() };
-  const { list, put } = require("@vercel/blob");
-  const listed = await list({ prefix: "karhutla/patroli-data", limit: 20 });
-  const hit = (listed.blobs || []).find(function (blob) {
-    return blob.pathname === BLOB_KEY || blob.pathname.indexOf("karhutla/patroli-data") === 0;
-  });
-  if (hit && hit.url) {
-    const res = await fetch(hit.url, { cache: "no-store" });
-    if (res.ok) {
-      const data = normalize(await res.json());
-      return { persistent: true, data: data };
+  try {
+    const { list, put } = require("@vercel/blob");
+    const listed = await list({ prefix: "karhutla/patroli-data", limit: 20 });
+    const hit = (listed.blobs || []).find(function (blob) {
+      return blob.pathname === BLOB_KEY || blob.pathname.indexOf("karhutla/patroli-data") === 0;
+    });
+    if (hit && hit.url) {
+      const res = await fetch(hit.url, { cache: "no-store" });
+      if (res.ok) {
+        const data = normalize(await res.json());
+        return { persistent: true, data: data };
+      }
     }
+    const seed = emptyStore();
+    await put(BLOB_KEY, JSON.stringify(seed), {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json"
+    });
+    return { persistent: true, data: seed };
+  } catch (err) {
+    return { persistent: false, data: emptyStore() };
   }
-  const seed = emptyStore();
-  await put(BLOB_KEY, JSON.stringify(seed), {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json"
-  });
-  return { persistent: true, data: seed };
 }
 
 async function writeStore(data) {
@@ -157,8 +161,9 @@ module.exports = async function handler(req, res) {
 
     send(res, 400, { ok: false, error: "Aksi tidak dikenali." });
   } catch (err) {
-    send(res, 500, {
+    send(res, 503, {
       ok: false,
+      persistent: false,
       error: err && err.message ? err.message : "Gagal memproses patroli."
     });
   }
