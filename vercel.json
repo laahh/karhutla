@@ -11,6 +11,9 @@
     "api/patroli.js": {
       "maxDuration": 10
     },
+    "api/kompetensi.js": {
+      "maxDuration": 10
+    },
     "api/air-quality.js": {
       "maxDuration": 10
     },
