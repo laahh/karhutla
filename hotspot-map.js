@@ -654,6 +654,7 @@
     return {
       kind: "patroli",
       id: "patroli-" + (row && row.id ? row.id : index + 1),
+      recordId: row && row.id ? String(row.id) : "",
       tanggal: dayKey(row && row.tanggal),
       bulan: dash(row && row.bulan),
       week: dash(row && row.week),
@@ -731,6 +732,21 @@
       }
     });
     return best;
+  }
+
+  function sipongiMatchPatrol(patrol) {
+    if (!patrol) return null;
+    return HOTSPOTS.find(function (spot) {
+      const hit = patrolMatchHotspot(spot);
+      return hit && hit.id === patrol.id;
+    }) || null;
+  }
+
+  function isSelectedPatrol(item) {
+    if (!item || !selectedId) return false;
+    if (item.id === selectedId) return true;
+    const patrol = patrolMatchHotspot(item);
+    return !!(patrol && patrol.id === selectedId);
   }
 
   function patrolCoversHotspot(patrol, spots) {
@@ -904,14 +920,15 @@
     if (spots.length) {
       html += '<p class="list-group">Hotspot satelit</p>';
       html += spots.map(function (item) {
-        const on = item.id === selectedId ? " is-on" : "";
+        const on = isSelectedPatrol(item) ? " is-on" : "";
         const patrol = patrolMatchHotspot(item);
         const pinClass = item.level + (patrol ? " is-patrolled" : "");
         const badge = patrol
           ? '<span class="badge patroli-erg">Patroli ERG</span>'
           : '<span class="badge ' + item.level + '">' + LEVELS[item.level].badge + "</span>";
         return (
-          '<button class="hotspot-item' + on + '" type="button" data-id="' + esc(item.id) + '">' +
+          '<button class="hotspot-item' + on + '" type="button" data-id="' + esc(item.id) + '"' +
+            (patrol ? ' data-patrol-id="' + esc(patrol.id) + '"' : "") + ">" +
             '<span class="pin-mini ' + pinClass + '"><i></i></span>' +
             '<span class="copy"><b>' + esc(item.name) + '</b><span class="meta">' + esc(item.detectedShort || item.detected) + " · " + esc(item.source) + "</span></span>" +
             badge +
@@ -958,7 +975,7 @@
     visibleHotspots().forEach(function (item) {
       const patrol = patrolMatchHotspot(item);
       const marker = L.marker([item.lat, item.lng], {
-        icon: markerIcon(item.level, item.id === selectedId, !!patrol),
+        icon: markerIcon(item.level, isSelectedPatrol(item), !!patrol),
         title: item.name + " · " + (item.detectedShort || item.detected) + (patrol ? " · Sudah patroli ERG" : ""),
         zIndexOffset: patrol ? 500 : 400
       }).addTo(map);
@@ -1210,26 +1227,42 @@
           return '<img src="' + esc(src) + '" alt="Dokumentasi patroli ' + esc(item.lokasi) + '">';
         }).join("") + "</div>")
       : "";
+    const sat = sipongiMatchPatrol(item);
+    const formHref = item.recordId
+      ? "patroli.html?id=" + encodeURIComponent(item.recordId)
+      : "patroli.html";
     cardEl.innerHTML =
-      "<small>Patroli pencegahan · " + esc(formatDate(item.tanggal)) + (item.week ? " · " + esc(item.week) : "") + "</small>" +
+      "<small>Laporan patroli ERG · " + esc(formatDate(item.tanggal)) + (item.week ? " · " + esc(item.week) : "") + "</small>" +
       "<h2>" + esc(item.lokasi) + "</h2>" +
       '<p><span class="badge patroli">' + esc(item.status) + "</span></p>" +
-      '<p class="detail-section">Lokasi</p>' +
+      '<p class="detail-section">Isi laporan</p>' +
       '<div class="detail-grid">' +
         "<div><span>Site</span><strong>" + esc(item.site) + "</strong></div>" +
         "<div><span>Waktu</span><strong>" + esc(item.waktu) + "</strong></div>" +
         "<div class='span-2'><span>Koordinat</span><strong>" + esc(coordText) + "</strong></div>" +
-        "<div class='span-2'><span>Personil</span><strong>" + esc(item.personil) + "</strong></div>" +
+        "<div class='span-2'><span>Personil / kru</span><strong>" + esc(item.personil) + "</strong></div>" +
         "<div class='span-2'><span>Keterangan</span><strong>" + esc(item.keterangan) + "</strong></div>" +
+        "<div><span>Bulan</span><strong>" + esc(item.bulan) + "</strong></div>" +
+        "<div><span>Week</span><strong>" + esc(item.week) + "</strong></div>" +
       "</div>" +
       gallery +
-      (hasCoord(item) ? '<div class="detail-actions"><button type="button" id="focus-spot">Fokus ke titik</button></div>' : "") +
-      '<p class="demo-note">Sumber: form patroli KARHUTLA. <a href="patroli.html">Buka input patroli</a></p>';
+      '<div class="detail-actions">' +
+        (hasCoord(item) ? '<button class="go" type="button" id="focus-spot">Fokus ke titik</button>' : "") +
+        '<a class="go" href="' + esc(formHref) + '">Buka form laporan</a>' +
+      "</div>" +
+      (sat
+        ? '<div class="detail-actions"><button class="ghost" type="button" id="open-sipongi">Lihat data satelit · ' + esc(sat.name) + "</button></div>"
+        : "") +
+      '<p class="demo-note">Sumber: form patroli KARHUTLA.</p>';
     const focus = document.getElementById("focus-spot");
     if (focus) {
       focus.addEventListener("click", function () {
         map.flyTo([item.lat, item.lng], 13, { duration: 0.8 });
       });
+    }
+    const openSat = document.getElementById("open-sipongi");
+    if (openSat && sat) {
+      openSat.addEventListener("click", function () { select(sat.id, true, { keepSipongi: true }); });
     }
   }
 
@@ -1273,9 +1306,17 @@
     if (map.hasLayer(opsLayer)) opsLayer.bringToFront();
   }
 
-  function select(id, fly) {
+  function select(id, fly, opts) {
+    opts = opts || {};
+    let item = findItem(id);
+    if (item && !opts.keepSipongi && item.kind !== "patroli" && item.kind !== "kasus") {
+      const patrol = patrolMatchHotspot(item);
+      if (patrol) {
+        id = patrol.id;
+        item = patrol;
+      }
+    }
     selectedId = id;
-    const item = findItem(id);
     paint();
     if (item && fly && hasCoord(item)) {
       if (item.kind === "kasus" && Number.isFinite(item.originLat)) {
@@ -1284,6 +1325,19 @@
         map.flyTo([item.lat, item.lng], 14, { duration: 0.75 });
       }
     }
+  }
+
+  function showFirstPatrolReport() {
+    showPatroli = true;
+    const layerBtn = document.querySelector("[data-layer='patroli']");
+    if (layerBtn) layerBtn.classList.add("is-on");
+    const list = dayPatrols();
+    if (list.length) {
+      select(list[0].id, true);
+      return true;
+    }
+    paint();
+    return false;
   }
 
   function setDay(key) {
@@ -1325,8 +1379,17 @@
   listEl.addEventListener("click", function (e) {
     const btn = e.target.closest("[data-id]");
     if (!btn) return;
-    select(btn.getAttribute("data-id"), true);
+    select(btn.getAttribute("data-patrol-id") || btn.getAttribute("data-id"), true);
   });
+
+  if (sumPatroli) {
+    const sumWrap = sumPatroli.closest("article");
+    if (sumWrap) {
+      sumWrap.classList.add("is-action");
+      sumWrap.title = "Lihat laporan patroli";
+      sumWrap.addEventListener("click", function () { showFirstPatrolReport(); });
+    }
+  }
 
   refreshBtn.addEventListener("click", loadHotspots);
   if (showAllRoutesEl) showAllRoutesEl.addEventListener("change", renderRoutes);
@@ -1375,9 +1438,16 @@
         return;
       }
       if (layer === "patroli") {
-        showPatroli = !showPatroli;
-        btn.classList.toggle("is-on", showPatroli);
-        paint();
+        if (showPatroli && selectedId && findItem(selectedId) && findItem(selectedId).kind === "patroli") {
+          showPatroli = false;
+          btn.classList.remove("is-on");
+          selectedId = null;
+          paint();
+          return;
+        }
+        showPatroli = true;
+        btn.classList.add("is-on");
+        if (!showFirstPatrolReport()) paint();
       }
     });
   });

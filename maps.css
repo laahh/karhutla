@@ -259,6 +259,10 @@
   background: rgba(8, 12, 12, .4);
 }
 
+.day-summary article.is-action {
+  cursor: pointer;
+}
+
 .day-summary small {
   display: block;
   color: #8e9497;
