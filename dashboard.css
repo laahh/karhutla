@@ -193,7 +193,7 @@
 .trend-chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .trend-chart .axis-tick { fill: #7d8385; font-size: 9px; }
 .trend-chart .grid-line { stroke: rgba(255, 255, 255, .08); stroke-width: 1; }
-.trend-chart .bar-internal { fill: #3fa1e0; }
+.trend-chart .bar-internal { fill: #04fc3a; }
 .trend-chart .bar-external { fill: var(--orange); }
 .trend-chart .bar-patrol { fill: #6ec8ff; }
 .trend-chart .bar-value { fill: #f4f5f5; font-size: 9.5px; font-weight: 700; text-anchor: middle; }
