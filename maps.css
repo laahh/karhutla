@@ -263,6 +263,11 @@
   cursor: pointer;
 }
 
+.day-summary article.is-on {
+  border-color: rgba(134, 209, 92, .55);
+  background: rgba(107, 180, 67, .14);
+}
+
 .day-summary small {
   display: block;
   color: #8e9497;
@@ -276,7 +281,7 @@
   display: block;
   margin-top: 2px;
   color: var(--green-light);
-  font-size: 18px;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
 

@@ -209,12 +209,27 @@
     return String(Number(key)).padStart(2, "0") + ":00";
   }
 
-  function visibleHotspots() {
-    if (!showSipongi) return [];
+  function hourFilteredHotspots() {
     if (selectedHour === "all") return HOTSPOTS;
     return HOTSPOTS.filter(function (item) {
       return hourKeyOf(item) === selectedHour;
     });
+  }
+
+  function spotInKonsesi(item) {
+    return !!(item && hasCoord(item) && insideIupk(item.lat, item.lng));
+  }
+
+  function spotOutsideKonsesi(item) {
+    return !!(item && hasCoord(item) && !insideIupk(item.lat, item.lng));
+  }
+
+  function visibleHotspots() {
+    if (!showSipongi) return [];
+    const list = hourFilteredHotspots();
+    if (scope === "internal") return list.filter(spotInKonsesi);
+    if (scope === "eksternal") return list.filter(spotOutsideKonsesi);
+    return list;
   }
 
   function clampHourFilter() {
@@ -413,7 +428,10 @@
   }
 
   function fitDay() {
-    const layers = opsLayer.getLayers().slice();
+    const layers = [];
+    if (scope !== "eksternal" && map.hasLayer(opsLayer)) {
+      opsLayer.getLayers().forEach(function (layer) { layers.push(layer); });
+    }
     Object.keys(markers).forEach(function (id) { layers.push(markers[id]); });
     Object.keys(caseMarkers).forEach(function (id) { layers.push(caseMarkers[id]); });
     Object.keys(patrolMarkers).forEach(function (id) { layers.push(patrolMarkers[id]); });
@@ -692,10 +710,21 @@
     }
   }
 
+  function patrolInScope(item) {
+    if (scope === "semua") return true;
+    if (!hasCoord(item)) return false;
+    const inside = insideIupk(item.lat, item.lng);
+    if (scope === "internal") return inside;
+    if (scope === "eksternal") return !inside;
+    return true;
+  }
+
   function dayPatrols() {
     if (!showPatroli) return [];
     const key = activeDayKey();
-    return PATROLS.filter(function (item) { return item.tanggal === key; });
+    return PATROLS.filter(function (item) {
+      return item.tanggal === key && patrolInScope(item);
+    });
   }
 
   function hotspotDay(item) {
@@ -879,33 +908,59 @@
 
   function renderSummary() {
     const cases = CASES.filter(function (c) { return c.tanggal === activeDayKey(); });
-    const internal = cases.filter(function (c) { return !c.eksternal; }).length;
-    const eksternal = cases.filter(function (c) { return c.eksternal; }).length;
+    const handledIn = cases.filter(function (c) { return !c.eksternal; }).length;
+    const handledEx = cases.filter(function (c) { return c.eksternal; }).length;
+    const hourSpots = hourFilteredHotspots();
+    const totalIn = hourSpots.filter(spotInKonsesi).length;
+    const totalEx = hourSpots.filter(spotOutsideKonsesi).length;
+    const scopeSpots = scope === "internal"
+      ? hourSpots.filter(spotInKonsesi)
+      : scope === "eksternal"
+        ? hourSpots.filter(spotOutsideKonsesi)
+        : hourSpots;
+    const patrolled = scopeSpots.filter(function (spot) { return !!patrolMatchHotspot(spot); }).length;
     const spots = visibleHotspots();
     const sipongiShown = showSipongi ? spots.length : 0;
     const sipongiAll = HOTSPOTS.length;
-    sumSipongi.textContent = selectedHour === "all" || !showSipongi
-      ? String(sipongiAll)
-      : String(sipongiShown);
-    sumInternal.textContent = String(internal);
-    sumEksternal.textContent = String(eksternal);
     const patrolAll = PATROLS.filter(function (p) { return p.tanggal === activeDayKey(); }).length;
-    if (sumPatroli) sumPatroli.textContent = String(patrolAll);
+
+    if (sumSipongi) {
+      sumSipongi.textContent = showSipongi ? String(sipongiShown) : String(sipongiAll);
+    }
+
+    sumInternal.textContent = handledIn + "/" + totalIn;
+    sumEksternal.textContent = handledEx + "/" + totalEx;
+    if (sumPatroli) sumPatroli.textContent = patrolled + "/" + scopeSpots.length;
+
+    if (sumInternal) {
+      sumInternal.title = handledIn + " penanganan dari " + totalIn + " titik di dalam konsesi";
+    }
+    if (sumEksternal) {
+      sumEksternal.title = handledEx + " penanganan dari " + totalEx + " titik di luar konsesi";
+    }
+    if (sumPatroli) {
+      sumPatroli.title = patrolled + " titik dipatroli dari " + scopeSpots.length + " hotspot " +
+        (scope === "internal" ? "internal" : scope === "eksternal" ? "eksternal" : "SiPongi");
+    }
+
     const label = formatDate(activeDayKey());
     const hourBit = selectedHour === "all" ? "" : " · jam " + hourChipLabel(selectedHour) + " WITA";
     const sipongiBit = selectedHour === "all" || !showSipongi
       ? "SiPongi " + sipongiAll
       : "SiPongi " + sipongiShown + " dari " + sipongiAll;
-    sourceEl.textContent = "Berau · " + label + hourBit + " · " + sipongiBit + " · Internal " + internal + " · Eksternal " + eksternal +
-      " · Patroli " + patrolAll +
+    const scopeBit = scope === "internal" ? " · area internal" : scope === "eksternal" ? " · area eksternal" : "";
+    sourceEl.textContent = "Berau · " + label + hourBit + scopeBit + " · " + sipongiBit +
+      " · Internal " + handledIn + "/" + totalIn +
+      " · Eksternal " + handledEx + "/" + totalEx +
+      " · Patroli " + patrolled + "/" + scopeSpots.length +
       (lastFetchAt ? " · " + lastFetchAt.toLocaleTimeString("id-ID") : "");
-    liveStatus.textContent = cases.length
-      ? (internal + " respon internal, " + eksternal + " eksternal" + (patrolAll ? ", " + patrolAll + " patroli" : ""))
-      : (patrolAll
-        ? patrolAll + " patroli pencegahan" + (sipongiShown ? ", " + sipongiShown + " hotspot SiPongi" : "")
-        : (sipongiShown
-          ? sipongiShown + " hotspot SiPongi" + (selectedHour === "all" ? "" : " jam " + hourChipLabel(selectedHour)) + ", belum ada penanganan terverifikasi"
-          : "Tidak ada titik pada " + (selectedHour === "all" ? "tanggal ini" : "jam ini")));
+    liveStatus.textContent = scopeSpots.length
+      ? (scope === "internal"
+        ? handledIn + "/" + totalIn + " titik internal ditangani · " + patrolled + "/" + scopeSpots.length + " dipatroli"
+        : scope === "eksternal"
+          ? handledEx + "/" + totalEx + " titik eksternal ditangani · " + patrolled + "/" + scopeSpots.length + " dipatroli"
+          : (handledIn + " respon internal, " + handledEx + " eksternal" + (patrolAll ? ", " + patrolAll + " patroli" : "")))
+      : "Tidak ada titik pada " + (selectedHour === "all" ? "tanggal ini" : "jam ini") + (scope !== "semua" ? " di area ini" : "");
   }
 
   function renderList() {
@@ -914,7 +969,11 @@
     const patrols = dayPatrols();
     countEl.textContent = String(spots.length);
     if (listLabel) {
-      listLabel.textContent = selectedHour === "all" ? "hotspot SiPongi" : "hotspot jam " + hourChipLabel(selectedHour);
+      listLabel.textContent = scope === "internal"
+        ? "hotspot internal"
+        : scope === "eksternal"
+          ? "hotspot eksternal"
+          : (selectedHour === "all" ? "hotspot SiPongi" : "hotspot jam " + hourChipLabel(selectedHour));
     }
     let html = "";
     if (spots.length) {
@@ -1291,7 +1350,12 @@
     if (selectedId && HOTSPOTS.some(function (row) { return row.id === selectedId; }) && !visibleIds[selectedId]) {
       selectedId = null;
     }
-    if (selectedId && PATROLS.some(function (row) { return row.id === selectedId; }) && !showPatroli) {
+    if (selectedId && PATROLS.some(function (row) { return row.id === selectedId; }) &&
+      !dayPatrols().some(function (row) { return row.id === selectedId; })) {
+      selectedId = null;
+    }
+    if (selectedId && CASES.some(function (row) { return row.id === selectedId; }) &&
+      !dayCases().some(function (row) { return row.id === selectedId; })) {
       selectedId = null;
     }
     renderDateStrip();
@@ -1304,6 +1368,25 @@
     renderRoutes();
     renderDetail(findItem(selectedId));
     if (map.hasLayer(opsLayer)) opsLayer.bringToFront();
+  }
+
+  function setScope(next, fit) {
+    if (!next) return;
+    scope = next;
+    if (next !== "semua") {
+      showSipongi = true;
+      const sipBtn = document.querySelector("[data-layer='sipongi']");
+      if (sipBtn) sipBtn.classList.add("is-on");
+    }
+    document.querySelectorAll("[data-scope]").forEach(function (el) {
+      el.classList.toggle("is-on", el.getAttribute("data-scope") === scope);
+    });
+    document.querySelectorAll("[data-scope-card]").forEach(function (el) {
+      el.classList.toggle("is-on", el.getAttribute("data-scope-card") === scope);
+    });
+    selectedId = null;
+    paint();
+    if (fit) fitDay();
   }
 
   function select(id, fly, opts) {
@@ -1367,12 +1450,13 @@
 
   document.querySelectorAll("[data-scope]").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      scope = btn.getAttribute("data-scope");
-      document.querySelectorAll("[data-scope]").forEach(function (el) {
-        el.classList.toggle("is-on", el.getAttribute("data-scope") === scope);
-      });
-      selectedId = null;
-      paint();
+      setScope(btn.getAttribute("data-scope"), true);
+    });
+  });
+
+  document.querySelectorAll("[data-scope-card]").forEach(function (card) {
+    card.addEventListener("click", function () {
+      setScope(card.getAttribute("data-scope-card"), true);
     });
   });
 
