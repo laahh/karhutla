@@ -195,6 +195,7 @@
 .trend-chart .grid-line { stroke: rgba(255, 255, 255, .08); stroke-width: 1; }
 .trend-chart .bar-internal { fill: #3fa1e0; }
 .trend-chart .bar-external { fill: var(--orange); }
+.trend-chart .bar-patrol { fill: #6ec8ff; }
 .trend-chart .bar-value { fill: #f4f5f5; font-size: 9.5px; font-weight: 700; text-anchor: middle; }
 .trend-chart .line-path { fill: none; stroke: #b7bcbe; stroke-width: 1.6; stroke-dasharray: 4 3; }
 .trend-chart .line-dot { fill: #b7bcbe; }
@@ -231,6 +232,7 @@
 .dot-line { background: #b7bcbe; border-radius: 50%; }
 .dot-blue { background: #3fa1e0; }
 .dot-orange { background: var(--orange); }
+.dot-cyan { background: #6ec8ff; }
 
 .donut-wrap {
   position: relative;

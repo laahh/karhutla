@@ -27,6 +27,7 @@
   let TREND_INTERNAL = [];
   let TREND_EXTERNAL = [];
   let TREND_ACTIVE = null;
+  let TREND_PATROL = [];
 
   function showTrendLoading() {
     const holder = document.getElementById("trend-chart");
@@ -55,14 +56,20 @@
 
     let barMax = 0;
     for (let i = 0; i < n; i += 1) {
-      barMax = Math.max(barMax, (Number(TREND_INTERNAL[i]) || 0) + (Number(TREND_EXTERNAL[i]) || 0));
+      barMax = Math.max(
+        barMax,
+        (Number(TREND_INTERNAL[i]) || 0) + (Number(TREND_EXTERNAL[i]) || 0),
+        Number(TREND_PATROL[i]) || 0
+      );
     }
     const yMax = Math.max(7, Math.ceil(barMax));
     const activeMax = TREND_ACTIVE
       ? Math.max(100, Math.ceil(Math.max.apply(null, TREND_ACTIVE) / 100) * 100)
       : 700;
     const groupW = plotW / n;
-    const barW = Math.min(groupW * 0.62, 42);
+    const pairW = Math.min(groupW * 0.78, 46);
+    const gap = Math.max(1.2, pairW * 0.08);
+    const barW = (pairW - gap) / 2;
     const yPix = function (v) { return MT + plotH - (v / yMax) * plotH; };
     const yPixActive = function (v) { return MT + plotH - (v / activeMax) * plotH; };
 
@@ -82,12 +89,16 @@
     let bars = "", xLabels = "", linePoints = [], lineValues = "";
     for (let i = 0; i < n; i++) {
       const gx = ML + i * groupW;
-      const bx = gx + (groupW - barW) / 2;
+      const pairX = gx + (groupW - pairW) / 2;
+      const bx = pairX;
+      const px = pairX + barW + gap;
       const internal = Number(TREND_INTERNAL[i]) || 0;
       const external = Number(TREND_EXTERNAL[i]) || 0;
+      const patrol = Number(TREND_PATROL[i]) || 0;
       const total = internal + external;
       const yInternalTop = yPix(internal);
       const yTotalTop = yPix(total);
+      const yPatrolTop = yPix(patrol);
       const baseY = yPix(0);
       const delay = (i * 45) + "ms";
 
@@ -96,12 +107,18 @@
       if (external > 0) {
         bars += '<rect class="bar-external" x="' + bx + '" y="' + yTotalTop + '" width="' + barW + '" height="' + (yInternalTop - yTotalTop) + '"/>';
       }
+      if (patrol > 0) {
+        bars += '<rect class="bar-patrol" x="' + px + '" y="' + yPatrolTop + '" width="' + barW + '" height="' + (baseY - yPatrolTop) + '"/>';
+      }
       bars += "</g>";
       if (internal > 0) {
         bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (bx + barW / 2) + '" y="' + (baseY - 3) + '">' + internal + "</text>";
       }
       if (external > 0) {
         bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (bx + barW / 2) + '" y="' + (yTotalTop + (yInternalTop - yTotalTop) / 2 + 3) + '">' + external + "</text>";
+      }
+      if (patrol > 0) {
+        bars += '<text class="bar-value" style="animation-delay:' + delay + '" x="' + (px + barW / 2) + '" y="' + (baseY - 3) + '">' + patrol + "</text>";
       }
 
       const showLabel = n <= 12 || i === 0 || i === n - 1 || i % (n > 20 ? 3 : 2) === 0;
@@ -182,11 +199,12 @@
   });
 
   // Live SiPongi + laporan wiring fills the chart via setTrendData.
-  window.setTrendData = function (labels, internalArr, externalArr, activeArr) {
+  window.setTrendData = function (labels, internalArr, externalArr, activeArr, patrolArr) {
     TREND_LABELS = labels;
     TREND_INTERNAL = internalArr;
     TREND_EXTERNAL = externalArr;
     TREND_ACTIVE = activeArr || null;
+    TREND_PATROL = patrolArr || [];
     renderTrend();
   };
 })();

@@ -44,6 +44,26 @@
     return Object.keys(keys).sort();
   }
 
+  function patrolRecords() {
+    const data = window.KARHUTLA_PATROLI_DATA;
+    return data && Array.isArray(data.records) ? data.records : [];
+  }
+
+  function patrolDateKeys() {
+    const keys = {};
+    patrolRecords().forEach(function (row) {
+      const key = KD.dayKey(row && row.tanggal);
+      if (key) keys[key] = true;
+    });
+    return Object.keys(keys);
+  }
+
+  function patrolCountOnDay(key) {
+    return patrolRecords().filter(function (row) {
+      return KD.dayKey(row && row.tanggal) === key;
+    }).length;
+  }
+
   function addDays(key, delta) {
     const d = new Date(key + "T00:00:00");
     d.setDate(d.getDate() + delta);
@@ -65,6 +85,7 @@
       if (c && c.tanggal) keys[c.tanggal] = true;
     });
     laporanDateKeys().forEach(function (key) { keys[key] = true; });
+    patrolDateKeys().forEach(function (key) { keys[key] = true; });
     const sorted = Object.keys(keys).sort();
     const today = KD.todayKey();
     const latest = sorted.length ? sorted[sorted.length - 1] : today;
@@ -103,7 +124,7 @@
       if (chartEl) {
         chartEl.setAttribute(
           "aria-label",
-          "Grafik tren hotspot dan karhutla " + labels[0] + " sampai " + labels[labels.length - 1]
+          "Grafik tren hotspot, karhutla, dan patroli " + labels[0] + " sampai " + labels[labels.length - 1]
         );
       }
       const internal = dateKeys.map(function (key) {
@@ -112,6 +133,7 @@
       const eksternal = dateKeys.map(function (key) {
         return cases.filter(function (c) { return c.tanggal === key && c.eksternal; }).length;
       });
+      const patrol = dateKeys.map(patrolCountOnDay);
 
       const perDay = [];
       for (let i = 0; i < dateKeys.length; i += 3) {
@@ -126,12 +148,12 @@
       if (seq !== refreshSeq) return;
 
       if (perDay.every(function (features) { return features == null; })) {
-        window.setTrendData(labels, internal, eksternal, null);
+        window.setTrendData(labels, internal, eksternal, null, patrol);
         return;
       }
 
       const active = perDay.map(function (features) { return features ? features.length : 0; });
-      window.setTrendData(labels, internal, eksternal, active);
+      window.setTrendData(labels, internal, eksternal, active, patrol);
     } finally {
       if (seq === refreshSeq) setRangeBusy(false);
     }
@@ -150,8 +172,9 @@
     });
   });
 
-  const ready = window.KarhutlaLaporanStore
-    ? KarhutlaLaporanStore.hydrate()
-    : Promise.resolve();
+  const jobs = [];
+  if (window.KarhutlaLaporanStore) jobs.push(KarhutlaLaporanStore.hydrate());
+  if (window.KarhutlaPatroliStore) jobs.push(KarhutlaPatroliStore.hydrate());
+  const ready = jobs.length ? Promise.all(jobs) : Promise.resolve();
   ready.then(refresh).catch(refresh);
 })();
