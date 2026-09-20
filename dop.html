@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Form input patroli pencegahan KARHUTLA PT Berau Coal.">
-  <title>Patroli • KARHUTLA Command Center</title>
+  <meta name="description" content="Form input DOP (observasi pengendalian) KARHUTLA PT Berau Coal.">
+  <title>DOP Karhutla • KARHUTLA Command Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,8 +22,8 @@
       <a href="index.html">Beranda</a>
       <a href="hotspot.html">Hotspot</a>
       <a href="laporan.html">Laporan</a>
-      <a class="active" href="javascript:void(0)" aria-current="page">Patroli</a>
-      <a href="dop.html">DOP Karhutla</a>
+      <a href="patroli.html">Patroli</a>
+      <a class="active" href="javascript:void(0)" aria-current="page">DOP Karhutla</a>
       <a href="kompetensi.html">Personil</a>
       <a href="sipongi.html">SiPongi</a>
     </nav>
@@ -35,8 +35,8 @@
         <a href="index.html">Beranda</a>
         <a href="hotspot.html">Hotspot</a>
         <a href="laporan.html">Laporan</a>
-        <a class="active" href="javascript:void(0)" aria-current="page">Patroli</a>
-      <a href="dop.html">DOP Karhutla</a>
+        <a href="patroli.html">Patroli</a>
+        <a class="active" href="javascript:void(0)" aria-current="page">DOP Karhutla</a>
         <a href="kompetensi.html">Personil</a>
         <a href="sipongi.html">SiPongi</a>
       </nav>
@@ -46,27 +46,27 @@
   <main class="lp-main">
     <div class="lp-hero">
       <div>
-        <p class="eyebrow">PATROLI PENCEGAHAN KARHUTLA PT BERAU COAL</p>
-        <h1>Input Patroli</h1>
-        <p class="lp-lead">Catat hasil patroli lapangan: tanggal, site, lokasi, status, personil, dan dokumentasi.</p>
+        <p class="eyebrow">DOP KARHUTLA PT BERAU COAL</p>
+        <h1>Input DOP Karhutla</h1>
+        <p class="lp-lead">Catat hasil DOP (observasi pengendalian) lapangan: tanggal, site, lokasi, status, personil, dan dokumentasi. Input dilakukan manual, terpisah dari data Patroli.</p>
       </div>
       <div class="lp-hero-meta">
-        <span class="lp-count" id="lp-count">0 patroli</span>
+        <span class="lp-count" id="lp-count">0 DOP</span>
         <button type="button" class="lp-btn-download" id="lp-download-all">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M5 19h14"/></svg>
           Unduh Excel
         </button>
         <button type="button" class="lp-btn-new" id="lp-new">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          Patroli baru
+          DOP baru
         </button>
       </div>
     </div>
 
     <div class="lp-layout">
-      <aside class="lp-list-card" aria-label="Daftar patroli tersimpan">
+      <aside class="lp-list-card" aria-label="Daftar DOP tersimpan">
         <label class="lp-search">
-          <span class="sr-only">Cari patroli</span>
+          <span class="sr-only">Cari DOP</span>
           <input type="search" id="lp-search" placeholder="Cari tanggal, site, lokasi, atau status…">
         </label>
         <div class="lp-list" id="lp-list" role="list"></div>
@@ -76,15 +76,14 @@
         <form id="lp-form" novalidate>
           <input type="hidden" name="index" id="f-index" value="">
           <input type="hidden" name="id" id="f-id" value="">
-          <input type="hidden" name="hotspot_key" id="f-hotspot-key" value="">
 
           <div class="lp-form-head">
-            <h2 id="lp-form-title">Patroli baru</h2>
-            <p id="lp-form-hint">Lengkapi data patroli. Kolom bertanda * wajib diisi. Bulan dan week terisi otomatis dari tanggal.</p>
+            <h2 id="lp-form-title">DOP baru</h2>
+            <p id="lp-form-hint">Lengkapi data DOP. Kolom bertanda * wajib diisi. Bulan dan week terisi otomatis dari tanggal.</p>
           </div>
 
           <fieldset>
-            <legend>Waktu patroli</legend>
+            <legend>Waktu DOP</legend>
             <div class="lp-grid lp-grid-3">
               <label>
                 <span>Tanggal *</span>
@@ -147,7 +146,7 @@
               </label>
               <label>
                 <span>Koordinat</span>
-                <input type="text" name="koordinat" id="f-koordinat" placeholder="otomatis dari titik hotspot, atau isi manual">
+                <input type="text" name="koordinat" id="f-koordinat" placeholder="contoh: 2.081, 117.42, atau isi manual">
               </label>
             </div>
           </fieldset>
@@ -190,8 +189,8 @@
 
   <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="patroli-store.js"></script>
-  <script src="patroli.js"></script>
+  <script src="dop-store.js"></script>
+  <script src="dop.js"></script>
   <script src="embers.js"></script>
   <script src="page-fire.js"></script>
 </body>

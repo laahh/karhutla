@@ -28,6 +28,7 @@
       <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
       <a href="laporan.html">Laporan</a>
       <a href="patroli.html">Patroli</a>
+      <a href="dop.html">DOP Karhutla</a>
       <a href="kompetensi.html">Personil</a>
       <a href="sipongi.html">SiPongi</a>
     </nav>
@@ -40,6 +41,7 @@
         <a class="active" href="javascript:void(0)" aria-current="page">Hotspot</a>
         <a href="laporan.html">Laporan</a>
         <a href="patroli.html">Patroli</a>
+      <a href="dop.html">DOP Karhutla</a>
         <a href="kompetensi.html">Personil</a>
         <a href="sipongi.html">SiPongi</a>
       </nav>
@@ -56,7 +58,7 @@
       </div>
       <p class="eyebrow">Command center · per tanggal</p>
       <h1>Hotspot &amp; respon.</h1>
-      <p class="lead" id="data-source">SiPongi Kemenhut + penanganan terverifikasi + patroli. Cakupan Kabupaten Berau.</p>
+      <p class="lead" id="data-source">SiPongi Kemenhut + penanganan terverifikasi + patroli + DOP. Cakupan Kabupaten Berau.</p>
 
       <div class="date-strip" id="date-strip" role="tablist" aria-label="Pilih tanggal"></div>
 
@@ -76,6 +78,10 @@
         <article>
           <small>Patroli</small>
           <strong id="sum-patroli">0</strong>
+        </article>
+        <article>
+          <small>DOP Karhutla</small>
+          <strong id="sum-dop">0</strong>
         </article>
       </div>
 
@@ -114,6 +120,7 @@
           <button type="button" data-layer="sipongi" class="is-on">SiPongi</button>
           <button type="button" data-layer="kasus" class="is-on">Terverifikasi</button>
           <button type="button" data-layer="patroli" class="is-on">Patroli</button>
+          <button type="button" data-layer="dop" class="is-on">DOP</button>
         </div>
         <div class="zoom-switch" role="group" aria-label="Zoom peta">
           <button type="button" id="zoom-in" aria-label="Perbesar">+</button>
@@ -145,6 +152,7 @@
       <article><i class="dot internal"></i><div><small>Internal</small><p>Dalam konsesi</p></div></article>
       <article><i class="dot kasus"></i><div><small>Eksternal</small><p>Luar konsesi</p></div></article>
       <article><i class="dot patroli"></i><div><small>Patroli</small><p>Pencegahan</p></div></article>
+      <article><i class="dot dop"></i><div><small>DOP</small><p>Observasi lapangan</p></div></article>
       <article><i class="dot route"></i><div><small>Jalur</small><p>Base → titik api</p></div></article>
     </div>
   </section>
@@ -190,6 +198,7 @@
   <script src="laporan-data.js"></script>
   <script src="laporan-store.js"></script>
   <script src="patroli-store.js"></script>
+  <script src="dop-store.js"></script>
   <script src="hotspot-map.js"></script>
   <script src="dokumentasi-lapangan.js"></script>
   <script src="page-fire.js"></script>

@@ -60,11 +60,13 @@
   const sumInternal = document.getElementById("sum-internal");
   const sumEksternal = document.getElementById("sum-eksternal");
   const sumPatroli = document.getElementById("sum-patroli");
+  const sumDop = document.getElementById("sum-dop");
   const showAllRoutesEl = document.getElementById("show-all-routes");
 
   let HOTSPOTS = [];
   let CASES = [];
   let PATROLS = [];
+  let DOPS = [];
   let DATE_KEYS = [];
   let selectedId = null;
   let selectedDay = "today";
@@ -73,9 +75,11 @@
   let showKasus = true;
   let showSipongi = true;
   let showPatroli = true;
+  let showDop = true;
   const markers = {};
   const caseMarkers = {};
   const patrolMarkers = {};
+  const dopMarkers = {};
   let routeLayer = L.layerGroup();
   let lastFetchAt = null;
   let loading = false;
@@ -395,6 +399,15 @@
     });
   }
 
+  function dopIcon(on) {
+    return L.divIcon({
+      className: "",
+      html: '<span class="pin dop' + (on ? " is-on" : "") + '"><i class="pin-ring"></i><i class="pin-core"></i></span>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+  }
+
   function markerIcon(level, on, patrolled) {
     return L.divIcon({
       className: "",
@@ -697,10 +710,48 @@
     PATROLS = rows.map(mapPatroli);
   }
 
+  function mapDop(row, index) {
+    const xy = parseCoord(row && row.koordinat);
+    const docs = (row && row.dokumentasi) || {};
+    const files = Array.isArray(docs.files) ? docs.files : [];
+    const photos = files.filter(function (src) {
+      if (window.KarhutlaDopStore) return KarhutlaDopStore.isPhotoRef(src);
+      return typeof src === "string" && (src.indexOf("laporan-foto/") === 0 || /^https?:\/\//.test(src) || src.indexOf("idb:") === 0);
+    }).map(function (src) {
+      return window.KarhutlaDopStore ? (KarhutlaDopStore.displayUrl(src) || src) : src;
+    }).filter(Boolean);
+    return {
+      kind: "dop",
+      id: "dop-" + (row && row.id ? row.id : index + 1),
+      recordId: row && row.id ? String(row.id) : "",
+      tanggal: dayKey(row && row.tanggal),
+      bulan: dash(row && row.bulan),
+      week: dash(row && row.week),
+      waktu: dash(row && row.waktu),
+      site: dash(row && row.site),
+      lokasi: dash(row && row.lokasi),
+      lat: Number.isFinite(Number(row && row.lat)) ? Number(row.lat) : xy.lat,
+      lng: Number.isFinite(Number(row && row.lng)) ? Number(row.lng) : xy.lng,
+      coordRaw: row && row.koordinat,
+      status: dash(row && row.status) || "Aman",
+      personil: dash(row && row.personil),
+      keterangan: dash(row && row.keterangan),
+      media: { photos: photos }
+    };
+  }
+
+  function loadDops() {
+    const rows = window.KARHUTLA_DOP_DATA && Array.isArray(window.KARHUTLA_DOP_DATA.records)
+      ? window.KARHUTLA_DOP_DATA.records
+      : [];
+    DOPS = rows.map(mapDop);
+  }
+
   function refreshDateKeys(pickLatest) {
     DATE_KEYS = Array.from(new Set(
       CASES.map(function (c) { return c.tanggal; })
         .concat(PATROLS.map(function (p) { return p.tanggal; }))
+        .concat(DOPS.map(function (d) { return d.tanggal; }))
         .filter(Boolean)
     )).sort();
     if (pickLatest) {
@@ -724,6 +775,23 @@
     const key = activeDayKey();
     return PATROLS.filter(function (item) {
       return item.tanggal === key && patrolInScope(item);
+    });
+  }
+
+  function dopInScope(item) {
+    if (scope === "semua") return true;
+    if (!hasCoord(item)) return false;
+    const inside = insideIupk(item.lat, item.lng);
+    if (scope === "internal") return inside;
+    if (scope === "eksternal") return !inside;
+    return true;
+  }
+
+  function dayDop() {
+    if (!showDop) return [];
+    const key = activeDayKey();
+    return DOPS.filter(function (item) {
+      return item.tanggal === key && dopInScope(item);
     });
   }
 
@@ -871,7 +939,8 @@
       const on = key === selectedDay ? " is-on" : "";
       const nCase = CASES.filter(function (c) { return c.tanggal === key; }).length;
       const nPatrol = PATROLS.filter(function (p) { return p.tanggal === key; }).length;
-      const count = key === "today" ? "" : " · " + (nCase + nPatrol);
+      const nDop = DOPS.filter(function (d) { return d.tanggal === key; }).length;
+      const count = key === "today" ? "" : " · " + (nCase + nPatrol + nDop);
       return '<button type="button" class="date-chip' + on + '" data-day="' + key + '">' +
         esc(chipLabel(key)) + (count ? "<i>" + count.replace(" · ", "") + "</i>" : "") +
         "</button>";
@@ -923,6 +992,7 @@
     const sipongiShown = showSipongi ? spots.length : 0;
     const sipongiAll = HOTSPOTS.length;
     const patrolAll = PATROLS.filter(function (p) { return p.tanggal === activeDayKey(); }).length;
+    const dopAll = DOPS.filter(function (d) { return d.tanggal === activeDayKey() && dopInScope(d); }).length;
 
     if (sumSipongi) {
       sumSipongi.textContent = showSipongi ? String(sipongiShown) : String(sipongiAll);
@@ -931,6 +1001,7 @@
     sumInternal.textContent = handledIn + "/" + totalIn;
     sumEksternal.textContent = handledEx + "/" + totalEx;
     if (sumPatroli) sumPatroli.textContent = patrolled + "/" + scopeSpots.length;
+    if (sumDop) sumDop.textContent = String(dopAll);
 
     if (sumInternal) {
       sumInternal.title = handledIn + " penanganan dari " + totalIn + " titik di dalam konsesi";
@@ -941,6 +1012,10 @@
     if (sumPatroli) {
       sumPatroli.title = patrolled + " titik dipatroli dari " + scopeSpots.length + " hotspot " +
         (scope === "internal" ? "internal" : scope === "eksternal" ? "eksternal" : "SiPongi");
+    }
+    if (sumDop) {
+      sumDop.title = dopAll + " hasil DOP Karhutla pada " +
+        (scope === "internal" ? "area internal" : scope === "eksternal" ? "area eksternal" : "tanggal ini");
     }
 
     const label = formatDate(activeDayKey());
@@ -953,13 +1028,16 @@
       " · Internal " + handledIn + "/" + totalIn +
       " · Eksternal " + handledEx + "/" + totalEx +
       " · Patroli " + patrolled + "/" + scopeSpots.length +
+      " · DOP " + dopAll +
       (lastFetchAt ? " · " + lastFetchAt.toLocaleTimeString("id-ID") : "");
     liveStatus.textContent = scopeSpots.length
       ? (scope === "internal"
         ? handledIn + "/" + totalIn + " titik internal ditangani · " + patrolled + "/" + scopeSpots.length + " dipatroli"
         : scope === "eksternal"
           ? handledEx + "/" + totalEx + " titik eksternal ditangani · " + patrolled + "/" + scopeSpots.length + " dipatroli"
-          : (handledIn + " respon internal, " + handledEx + " eksternal" + (patrolAll ? ", " + patrolAll + " patroli" : "")))
+          : (handledIn + " respon internal, " + handledEx + " eksternal" +
+            (patrolAll ? ", " + patrolAll + " patroli" : "") +
+            (dopAll ? ", " + dopAll + " DOP" : "")))
       : "Tidak ada titik pada " + (selectedHour === "all" ? "tanggal ini" : "jam ini") + (scope !== "semua" ? " di area ini" : "");
   }
 
@@ -967,6 +1045,7 @@
     const cases = dayCases();
     const spots = visibleHotspots();
     const patrols = dayPatrols();
+    const dops = dayDop();
     countEl.textContent = String(spots.length);
     if (listLabel) {
       listLabel.textContent = scope === "internal"
@@ -1022,7 +1101,20 @@
         );
       }).join("");
     }
-    listEl.innerHTML = html || '<p class="demo-note">Tidak ada hotspot, patroli, atau penanganan pada ' + (selectedHour === "all" ? "tanggal ini" : "jam ini") + ".</p>";
+    if (dops.length) {
+      html += '<p class="list-group">Hasil DOP Karhutla</p>';
+      html += dops.map(function (item) {
+        const on = item.id === selectedId ? " is-on" : "";
+        return (
+          '<button class="hotspot-item' + on + '" type="button" data-id="' + esc(item.id) + '">' +
+            '<span class="pin-mini dop"><i></i></span>' +
+            '<span class="copy"><b>' + esc(item.lokasi) + '</b><span class="meta">' + esc(item.site) + (item.waktu ? " · " + item.waktu : "") + "</span></span>" +
+            '<span class="badge dop">' + esc(item.status) + "</span>" +
+          "</button>"
+        );
+      }).join("");
+    }
+    listEl.innerHTML = html || '<p class="demo-note">Tidak ada hotspot, patroli, DOP, atau penanganan pada ' + (selectedHour === "all" ? "tanggal ini" : "jam ini") + ".</p>";
   }
 
   function renderMarkers() {
@@ -1090,6 +1182,28 @@
     });
   }
 
+  function renderDopMarkers() {
+    Object.keys(dopMarkers).forEach(function (id) {
+      map.removeLayer(dopMarkers[id]);
+      delete dopMarkers[id];
+    });
+    if (!showDop) return;
+    dayDop().forEach(function (item) {
+      if (!hasCoord(item)) return;
+      const marker = L.marker([item.lat, item.lng], {
+        icon: dopIcon(item.id === selectedId),
+        title: item.lokasi + " · " + item.site,
+        zIndexOffset: 600
+      }).addTo(map);
+      marker.bindTooltip(
+        esc(item.lokasi) + "<br>" + esc(item.site) + (item.waktu ? " · " + esc(item.waktu) : "") + "<br>" + esc(item.status),
+        { sticky: true, className: "dop-tip", direction: "top" }
+      );
+      marker.on("click", function () { select(item.id, true); });
+      dopMarkers[item.id] = marker;
+    });
+  }
+
   function addRoute(item, emphasize) {
     if (!hasCoord(item) || !Number.isFinite(item.originLat) || !Number.isFinite(item.originLng)) return;
     const color = item.eksternal ? "#ef5a36" : "#86d15c";
@@ -1121,6 +1235,7 @@
     if (!id) return null;
     return CASES.find(function (row) { return row.id === id; }) ||
       PATROLS.find(function (row) { return row.id === id; }) ||
+      DOPS.find(function (row) { return row.id === id; }) ||
       HOTSPOTS.find(function (row) { return row.id === id; });
   }
 
@@ -1325,6 +1440,49 @@
     }
   }
 
+  function renderDopDetail(item) {
+    emptyEl.hidden = true;
+    cardEl.hidden = false;
+    detailPane.classList.add("is-open");
+    const coordText = hasCoord(item) ? item.lat.toFixed(6) + ", " + item.lng.toFixed(6) : dash(item.coordRaw);
+    const photos = (item.media && item.media.photos) || [];
+    const gallery = photos.length
+      ? ('<p class="detail-section">Dokumentasi</p><div class="media-gallery">' +
+        photos.map(function (src) {
+          return '<img src="' + esc(src) + '" alt="Dokumentasi DOP ' + esc(item.lokasi) + '">';
+        }).join("") + "</div>")
+      : "";
+    const formHref = item.recordId
+      ? "dop.html?id=" + encodeURIComponent(item.recordId)
+      : "dop.html";
+    cardEl.innerHTML =
+      "<small>Hasil DOP Karhutla · " + esc(formatDate(item.tanggal)) + (item.week ? " · " + esc(item.week) : "") + "</small>" +
+      "<h2>" + esc(item.lokasi) + "</h2>" +
+      '<p><span class="badge dop">' + esc(item.status) + "</span></p>" +
+      '<p class="detail-section">Isi DOP</p>' +
+      '<div class="detail-grid">' +
+        "<div><span>Site</span><strong>" + esc(item.site) + "</strong></div>" +
+        "<div><span>Waktu</span><strong>" + esc(item.waktu) + "</strong></div>" +
+        "<div class='span-2'><span>Koordinat</span><strong>" + esc(coordText) + "</strong></div>" +
+        "<div class='span-2'><span>Personil / kru</span><strong>" + esc(item.personil) + "</strong></div>" +
+        "<div class='span-2'><span>Keterangan</span><strong>" + esc(item.keterangan) + "</strong></div>" +
+        "<div><span>Bulan</span><strong>" + esc(item.bulan) + "</strong></div>" +
+        "<div><span>Week</span><strong>" + esc(item.week) + "</strong></div>" +
+      "</div>" +
+      gallery +
+      '<div class="detail-actions">' +
+        (hasCoord(item) ? '<button class="go" type="button" id="focus-spot">Fokus ke titik</button>' : "") +
+        '<a class="go" href="' + esc(formHref) + '">Buka form DOP</a>' +
+      "</div>" +
+      '<p class="demo-note">Sumber: form DOP Karhutla (input manual).</p>';
+    const focus = document.getElementById("focus-spot");
+    if (focus) {
+      focus.addEventListener("click", function () {
+        map.flyTo([item.lat, item.lng], 13, { duration: 0.8 });
+      });
+    }
+  }
+
   function renderDetail(item) {
     if (!item) {
       emptyEl.hidden = false;
@@ -1338,6 +1496,10 @@
     }
     if (item.kind === "patroli") {
       renderPatrolDetail(item);
+      return;
+    }
+    if (item.kind === "dop") {
+      renderDopDetail(item);
       return;
     }
     renderSipongiDetail(item);
@@ -1358,6 +1520,10 @@
       !dayCases().some(function (row) { return row.id === selectedId; })) {
       selectedId = null;
     }
+    if (selectedId && DOPS.some(function (row) { return row.id === selectedId; }) &&
+      !dayDop().some(function (row) { return row.id === selectedId; })) {
+      selectedId = null;
+    }
     renderDateStrip();
     renderHourStrip();
     renderSummary();
@@ -1365,6 +1531,7 @@
     renderMarkers();
     renderCaseMarkers();
     renderPatrolMarkers();
+    renderDopMarkers();
     renderRoutes();
     renderDetail(findItem(selectedId));
     if (map.hasLayer(opsLayer)) opsLayer.bringToFront();
@@ -1392,7 +1559,7 @@
   function select(id, fly, opts) {
     opts = opts || {};
     let item = findItem(id);
-    if (item && !opts.keepSipongi && item.kind !== "patroli" && item.kind !== "kasus") {
+    if (item && !opts.keepSipongi && item.kind !== "patroli" && item.kind !== "kasus" && item.kind !== "dop") {
       const patrol = patrolMatchHotspot(item);
       if (patrol) {
         id = patrol.id;
@@ -1415,6 +1582,19 @@
     const layerBtn = document.querySelector("[data-layer='patroli']");
     if (layerBtn) layerBtn.classList.add("is-on");
     const list = dayPatrols();
+    if (list.length) {
+      select(list[0].id, true);
+      return true;
+    }
+    paint();
+    return false;
+  }
+
+  function showFirstDopReport() {
+    showDop = true;
+    const layerBtn = document.querySelector("[data-layer='dop']");
+    if (layerBtn) layerBtn.classList.add("is-on");
+    const list = dayDop();
     if (list.length) {
       select(list[0].id, true);
       return true;
@@ -1475,6 +1655,15 @@
     }
   }
 
+  if (sumDop) {
+    const sumDopWrap = sumDop.closest("article");
+    if (sumDopWrap) {
+      sumDopWrap.classList.add("is-action");
+      sumDopWrap.title = "Lihat hasil DOP Karhutla";
+      sumDopWrap.addEventListener("click", function () { showFirstDopReport(); });
+    }
+  }
+
   refreshBtn.addEventListener("click", loadHotspots);
   if (showAllRoutesEl) showAllRoutesEl.addEventListener("change", renderRoutes);
 
@@ -1532,6 +1721,19 @@
         showPatroli = true;
         btn.classList.add("is-on");
         if (!showFirstPatrolReport()) paint();
+        return;
+      }
+      if (layer === "dop") {
+        if (showDop && selectedId && findItem(selectedId) && findItem(selectedId).kind === "dop") {
+          showDop = false;
+          btn.classList.remove("is-on");
+          selectedId = null;
+          paint();
+          return;
+        }
+        showDop = true;
+        btn.classList.add("is-on");
+        if (!showFirstDopReport()) paint();
       }
     });
   });
@@ -1540,6 +1742,7 @@
   function startMap() {
     loadCases();
     loadPatrols();
+    loadDops();
     refreshDateKeys(true);
     renderDateStrip();
     setTimeout(function () {
@@ -1551,6 +1754,7 @@
     const jobs = [];
     if (window.KarhutlaLaporanStore) jobs.push(KarhutlaLaporanStore.hydrate());
     if (window.KarhutlaPatroliStore) jobs.push(KarhutlaPatroliStore.hydrate());
+    if (window.KarhutlaDopStore) jobs.push(KarhutlaDopStore.hydrate());
     if (!jobs.length) {
       startMap();
       return;
