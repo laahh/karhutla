@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="maps.css">
   <link rel="stylesheet" href="dokumentasi-lapangan.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-velocity@2.1.4/dist/leaflet-velocity.min.css">
+  <link rel="stylesheet" href="iqair-mode.css">
 </head>
 <body class="page-app">
   <section class="map-hero">
@@ -47,6 +49,11 @@
       </nav>
     </details>
     </header>
+
+    <div class="mode-switch glass-panel" role="group" aria-label="Mode tampilan peta">
+      <button type="button" class="is-on" data-mode="karhutla">Karhutla</button>
+      <button type="button" data-mode="iqair">iQAir</button>
+    </div>
 
     <aside class="glass-panel list-card" aria-label="Agenda KARHUTLA harian">
       <div class="chip-row">
@@ -155,6 +162,26 @@
       <article><i class="dot dop"></i><div><small>DOP</small><p>Observasi lapangan</p></div></article>
       <article><i class="dot route"></i><div><small>Jalur</small><p>Base → titik api</p></div></article>
     </div>
+
+    <div id="iqair-map" class="iqair-map" role="application" aria-label="Peta kualitas udara, kebakaran, dan angin global (IQAir)"></div>
+
+    <div class="iqair-toolbar" aria-label="Layer iQAir">
+      <button type="button" class="iqair-pill is-on" data-iqair-layer="aqi"><i class="dot"></i>Stasiun kualitas udara</button>
+      <button type="button" class="iqair-pill is-on" data-iqair-layer="fire"><i class="dot"></i>Kebakaran</button>
+      <button type="button" class="iqair-pill is-on" data-iqair-layer="wind"><i class="dot"></i>Angin</button>
+      <button type="button" class="iqair-pill is-on" data-iqair-layer="karhutla"><i class="dot"></i>Data Karhutla</button>
+    </div>
+
+    <div class="iqair-legend-bar" aria-label="Legenda kualitas udara">
+      <span>Baik</span>
+      <span>Sedang</span>
+      <span>Tidak sehat bagi kelompok sensitif</span>
+      <span>Tidak sehat</span>
+      <span>Sangat tidak sehat</span>
+      <span>Berbahaya</span>
+    </div>
+
+    <div class="iqair-note" id="iqair-note" role="status"></div>
   </section>
 
   <div class="doc-modal" id="doc-modal" hidden>
@@ -192,6 +219,8 @@
 
   <canvas class="page-fire" id="page-fire" aria-hidden="true"></canvas>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-velocity@2.1.4/dist/leaflet-velocity.min.js"></script>
   <script src="iupk-boundary.js"></script>
   <script src="karhutla-data-utils.js"></script>
   <script src="kasus-data.js"></script>
@@ -201,6 +230,8 @@
   <script src="dop-store.js"></script>
   <script src="hotspot-map.js"></script>
   <script src="dokumentasi-lapangan.js"></script>
+  <script src="mode-keys.js"></script>
+  <script src="iqair-mode.js"></script>
   <script src="page-fire.js"></script>
 </body>
 </html>

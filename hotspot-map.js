@@ -1535,6 +1535,13 @@
     renderRoutes();
     renderDetail(findItem(selectedId));
     if (map.hasLayer(opsLayer)) opsLayer.bringToFront();
+    window.KarhutlaMapData = {
+      hotspots: visibleHotspots(),
+      cases: dayCases(),
+      patrols: dayPatrols(),
+      dops: dayDop(),
+      day: activeDayKey()
+    };
   }
 
   function setScope(next, fit) {
