@@ -38,6 +38,22 @@
   const noteEl = document.getElementById("iqair-note");
   if (!modeButtons.length || !iqairMapEl) return;
 
+  const sourceEl = document.getElementById("iqair-source");
+  const sumStationsEl = document.getElementById("iqair-sum-stations");
+  const sumWorstEl = document.getElementById("iqair-sum-worst");
+  const sumFireEl = document.getElementById("iqair-sum-fire");
+  const sumWindEl = document.getElementById("iqair-sum-wind");
+  const listCountEl = document.getElementById("iqair-list-count");
+  const listLabelEl = document.getElementById("iqair-list-label");
+  const listEl = document.getElementById("iqair-list");
+  const refreshBtn = document.getElementById("iqair-btn-refresh");
+
+  let aqiStations = [];
+  let fireRows = [];
+  let windAvgSpeed = null;
+  let sidebarSort = "aqi";
+  let lastUpdated = null;
+
   let map = null;
   let aqiLayer = null;
   let heatLayer = null;
@@ -86,6 +102,89 @@
   function setNote(key, message) {
     noteParts[key] = message || "";
     renderNote();
+  }
+
+  function formatTime(date) {
+    return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function renderIqairSidebar() {
+    if (!listEl) return;
+    if (sumStationsEl) sumStationsEl.textContent = String(aqiStations.length);
+    if (sumFireEl) sumFireEl.textContent = String(fireRows.length);
+    if (sumWorstEl) {
+      const worst = aqiStations.reduce(function (max, s) { return Math.max(max, s.aqi); }, 0);
+      sumWorstEl.textContent = worst ? String(worst) : "—";
+    }
+    if (sumWindEl) sumWindEl.textContent = windAvgSpeed != null ? windAvgSpeed.toFixed(1) + " m/s" : "—";
+
+    if (sourceEl) {
+      sourceEl.textContent = "Indonesia · " + aqiStations.length + " stasiun AQI · " + fireRows.length + " titik kebakaran" +
+        (windAvgSpeed != null ? " · angin rata² " + windAvgSpeed.toFixed(1) + " m/s" : "") +
+        (lastUpdated ? " · diperbarui " + formatTime(lastUpdated) : "");
+    }
+
+    const isFireSort = sidebarSort === "fire";
+    if (listLabelEl) listLabelEl.textContent = isFireSort ? "titik kebakaran" : "stasiun kualitas udara";
+
+    if (isFireSort) {
+      if (listCountEl) listCountEl.textContent = String(fireRows.length);
+      const sorted = fireRows.slice().sort(function (a, b) { return (Number(b.frp) || 0) - (Number(a.frp) || 0); }).slice(0, 60);
+      listEl.innerHTML = sorted.length ? sorted.map(function (row, i) {
+        return (
+          '<button class="hotspot-item" type="button" data-iqair-idx="fire:' + i + '">' +
+            '<span class="pin-mini" style="color:#ef5a36;background:rgba(239,90,54,.14);border-color:rgba(239,90,54,.4)"><i style="background:#ef5a36"></i></span>' +
+            '<span class="copy"><b>' + esc(row.date || "Titik panas") + '</b><span class="meta">' +
+              (row.confidence ? "Keyakinan " + esc(row.confidence) : "FIRMS VIIRS") + "</span></span>" +
+            '<span class="badge" style="color:#ff8a70;border-color:rgba(239,90,54,.5)">FRP ' + esc(row.frp || "—") + "</span>" +
+          "</button>"
+        );
+      }).join("") : '<p class="demo-note">Tidak ada titik kebakaran pada tampilan peta saat ini.</p>';
+    } else {
+      if (listCountEl) listCountEl.textContent = String(aqiStations.length);
+      const sorted = aqiStations.slice().sort(function (a, b) { return b.aqi - a.aqi; }).slice(0, 60);
+      listEl.innerHTML = sorted.length ? sorted.map(function (s, i) {
+        const level = aqiLevel(s.aqi);
+        return (
+          '<button class="hotspot-item" type="button" data-iqair-idx="aqi:' + i + '">' +
+            '<span class="pin-mini" style="color:' + level.color + ';background:' + level.color + '22;border-color:' + level.color + '66"><i style="background:' + level.color + '"></i></span>' +
+            '<span class="copy"><b>' + esc(s.name) + '</b><span class="meta">' + esc(level.label) + "</span></span>" +
+            '<span class="badge" style="color:' + level.color + ';border-color:' + level.color + '88">AQI ' + s.aqi + "</span>" +
+          "</button>"
+        );
+      }).join("") : '<p class="demo-note">Tidak ada stasiun kualitas udara pada tampilan peta saat ini.</p>';
+      listEl.__sorted = sorted;
+    }
+    listEl.__sortedFire = isFireSort ? fireRows.slice().sort(function (a, b) { return (Number(b.frp) || 0) - (Number(a.frp) || 0); }).slice(0, 60) : null;
+  }
+
+  if (listEl) {
+    listEl.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-iqair-idx]");
+      if (!btn || !map) return;
+      const [kind, idxStr] = btn.getAttribute("data-iqair-idx").split(":");
+      const idx = Number(idxStr);
+      const row = kind === "fire" ? (listEl.__sortedFire || [])[idx] : (listEl.__sorted || [])[idx];
+      if (!row) return;
+      map.flyTo([row.lat, row.lon], 8, { duration: 0.75 });
+      if (row.marker) setTimeout(function () { row.marker.openPopup(); }, 350);
+    });
+  }
+
+  document.querySelectorAll("[data-iqair-sort]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      sidebarSort = btn.getAttribute("data-iqair-sort");
+      document.querySelectorAll("[data-iqair-sort]").forEach(function (b) { b.classList.toggle("is-on", b === btn); });
+      renderIqairSidebar();
+    });
+  });
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", function () {
+      refreshAqi();
+      refreshFires();
+      loadWindLayer();
+    });
   }
 
   function currentBoundsParam() {
@@ -145,6 +244,7 @@
       aqiLayer.clearLayers();
       if (json.status !== "ok" || !Array.isArray(json.data)) throw new Error(json.data || "Respons WAQI tidak valid");
       const heatPoints = [];
+      const stations = [];
       json.data.forEach(function (row) {
         const aqi = Number(row.aqi);
         if (!Number.isFinite(aqi)) return;
@@ -164,8 +264,12 @@
         );
         aqiLayer.addLayer(marker);
         heatPoints.push([row.lat, row.lon, Math.min(aqi / 300, 1)]);
+        stations.push({ lat: row.lat, lon: row.lon, aqi: aqi, name: (row.station && row.station.name) || "Stasiun", marker: marker });
       });
       if (heatLayer) heatLayer.setLatLngs(heatPoints);
+      aqiStations = stations;
+      lastUpdated = new Date();
+      renderIqairSidebar();
       setNote("aqi", "");
     } catch (err) {
       setNote("aqi", "Gagal memuat data stasiun kualitas udara: " + esc(err.message) + ".");
@@ -224,7 +328,11 @@
           { className: "iqair-popup" }
         );
         fireLayer.addLayer(marker);
+        row.marker = marker;
       });
+      fireRows = rows;
+      lastUpdated = new Date();
+      renderIqairSidebar();
       setNote("fire", "");
     } catch (err) {
       setNote("fire", "Gagal memuat data kebakaran: " + esc(err.message) + ".");
@@ -252,9 +360,9 @@
       const speed = json.wind && Number.isFinite(json.wind.speed) ? json.wind.speed : 0;
       const deg = json.wind && Number.isFinite(json.wind.deg) ? json.wind.deg : 0;
       const rad = (deg * Math.PI) / 180;
-      return { u: -speed * Math.sin(rad), v: -speed * Math.cos(rad) };
+      return { u: -speed * Math.sin(rad), v: -speed * Math.cos(rad), speed: speed };
     } catch (err) {
-      return { u: 0, v: 0 };
+      return { u: 0, v: 0, speed: 0 };
     }
   }
 
@@ -277,22 +385,26 @@
       dx: WIND_GRID.dx,
       dy: WIND_GRID.dy
     };
-    return [
-      { header: Object.assign({ parameterCategory: 2, parameterNumber: 2 }, header), data: results.map(function (r) { return r.u; }) },
-      { header: Object.assign({ parameterCategory: 2, parameterNumber: 3 }, header), data: results.map(function (r) { return r.v; }) }
-    ];
+    const avgSpeed = results.reduce(function (sum, r) { return sum + r.speed; }, 0) / results.length;
+    return {
+      avgSpeed: avgSpeed,
+      layers: [
+        { header: Object.assign({ parameterCategory: 2, parameterNumber: 2 }, header), data: results.map(function (r) { return r.u; }) },
+        { header: Object.assign({ parameterCategory: 2, parameterNumber: 3 }, header), data: results.map(function (r) { return r.v; }) }
+      ]
+    };
   }
 
   async function loadWindLayer() {
     if (!map || !showWind) return;
     setNote("wind", "Memuat data angin…");
     try {
-      const data = await fetchWindGridData();
+      const result = await fetchWindGridData();
       if (!showWind) return;
       if (windLayer) { map.removeLayer(windLayer); windLayer = null; }
       windLayer = L.velocityLayer({
         displayValues: false,
-        data: data,
+        data: result.layers,
         minVelocity: 0,
         maxVelocity: 12,
         velocityScale: 0.01,
@@ -300,6 +412,9 @@
         colorScale: ["rgba(255,255,255,0.9)"]
       });
       windLayer.addTo(map);
+      windAvgSpeed = result.avgSpeed;
+      lastUpdated = new Date();
+      renderIqairSidebar();
       setNote("wind", "");
     } catch (err) {
       setNote("wind", "Gagal memuat data angin: " + esc(err.message) + ".");
@@ -317,6 +432,8 @@
       windLayer = null;
     }
     if (!showWind) {
+      windAvgSpeed = null;
+      renderIqairSidebar();
       setNote("wind", "");
       return;
     }
@@ -424,6 +541,7 @@
       refreshAqiDebounced();
       refreshFiresDebounced();
     });
+    renderIqairSidebar();
     refreshAqi();
     refreshFires();
     applyWindLayer();
@@ -438,13 +556,28 @@
         showAqi = !showAqi;
         btn.classList.toggle("is-on", showAqi);
         if (aqiLayer) {
-          if (showAqi) { refreshAqi(); } else { aqiLayer.clearLayers(); if (heatLayer) heatLayer.setLatLngs([]); setNote("aqi", ""); }
+          if (showAqi) {
+            refreshAqi();
+          } else {
+            aqiLayer.clearLayers();
+            if (heatLayer) heatLayer.setLatLngs([]);
+            aqiStations = [];
+            renderIqairSidebar();
+            setNote("aqi", "");
+          }
         }
       } else if (layer === "fire") {
         showFire = !showFire;
         btn.classList.toggle("is-on", showFire);
         if (fireLayer) {
-          if (showFire) { refreshFires(); } else { fireLayer.clearLayers(); setNote("fire", ""); }
+          if (showFire) {
+            refreshFires();
+          } else {
+            fireLayer.clearLayers();
+            fireRows = [];
+            renderIqairSidebar();
+            setNote("fire", "");
+          }
         }
       } else if (layer === "wind") {
         showWind = !showWind;

@@ -34,11 +34,14 @@
 body.mode-iqair #map,
 body.mode-iqair .map-vignette,
 body.mode-iqair #map-loading,
-body.mode-iqair .list-card,
+body.mode-iqair .list-card:not(.iqair-list-card),
 body.mode-iqair .hud-right,
 body.mode-iqair .map-legend-bar {
   display: none !important;
 }
+
+.iqair-list-card { display: none; }
+body.mode-iqair .iqair-list-card { display: flex; }
 
 .iqair-map {
   position: absolute;
